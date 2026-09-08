@@ -1,7 +1,7 @@
 /* ============================================================
  * ⚠️ 冻结文件（2026-09-08，S7 完成后状态）
  * 本文件剩余内容仅为：
- *   1. lab（自编译模块平台）待迁代码 —— 归 modules/lab，v0.04 迁出
+ *   1. lab（自编译模块平台）的共享状态 var 与启动期初始化（函数已全部迁至 modules/lab/）
  *   2. 共享状态 var 声明 —— 迁移期由各视图模块经全局作用域读写（v0.03+ 状态重构另立任务）
  *   3. 启动期 IIFE 与顶层初始化（含 doLogin/renderRealAudit 历史包装，行为已等价内联）
  * 禁止在此添加任何新业务逻辑（架构设计-v1.0.md §14.6）。
@@ -182,59 +182,6 @@ var DYN_SOURCES={
     });
   }}
 };
-function fetchDyn(m,cb){
-  var src=DYN_SOURCES[m.dynsrc];
-  if(!src){cb({items:[]});return;}
-  src.fetch().then(function(items){
-    if(m.dynpath){String(m.dynpath).split('.').forEach(function(pp){if(items&&pp)items=items[pp];});}
-    m._dynCache=items;cb({items:items||[]});
-  }).catch(function(){cb({items:m._dynCache||[],fetchError:true});});
-}
-function tplToCode(m){
-  var d=resolveData(m);
-  var unit=esc(d.unit||m.unit||'');
-  var icon=esc(m.icon||'🔢'),name=esc(m.name);
-  var html='',css='body{padding:12px;font-family:-apple-system,"PingFang SC",sans-serif}'+
-    '.mc-name{font-size:11.5px;color:#8a8f99;display:flex;gap:5px;align-items:center;font-weight:600}'+
-    '.mc-name .ic{font-style:normal;font-size:12px}'+
-    '.mc-val{font-size:26px;font-weight:800;margin-top:4px;color:#1c1c1e}'+
-    '.mc-val small{font-size:12px;font-weight:600;margin-left:2px;color:#8a8f99}'+
-    '.mc-bar{height:8px;border-radius:99px;background:rgba(0,0,0,.08);margin-top:8px;overflow:hidden}'+
-    '.mc-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2))}'+
-    '.mc-desc{font-size:11.5px;color:#8a8f99;margin-top:6px;line-height:1.6}'+
-    '.mc-row{display:flex;justify-content:space-between;font-size:12px;color:#5a5f68;margin-top:5px}';
-  var js='';
-  function body(){return 'var d=host.data||{};var el=function(id){return document.getElementById(id)};';}
-  if(m.type==='stat'){
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-val"><span id="v">--</span><small>'+unit+'</small></div>';
-    js=body()+"el('v').textContent=fmt(d.value);";
-  }else if(m.type==='progress'){
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-val"><span id="v">--</span><small>%</small></div><div class="mc-bar"><i id="b" style="width:0"></i></div>';
-    js=body()+"var pv=Math.max(0,Math.min(100,Number(d.value)||0));el('v').textContent=pv;el('b').style.width=pv+'%';";
-  }else if(m.type==='status'){
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-desc"><span id="dt" style="display:inline-block;margin-right:6px">●</span><span id="v">--</span></div>';
-    js=body()+"var ok=(Number(d.value)||0)<80;el('dt').style.color=ok?'#30D158':'#FF9F0A';el('v').textContent=(d.value||'--')+(d.unit||'');";
-  }else if(m.type==='toggle'){
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-val" style="font-size:17px" id="v">--</div>';
-    js=body()+"el('v').textContent=(Number(d.value)||0)?'已开启':'已关闭';";
-  }else if(m.type==='list'){
-    var rowsHtml='';
-    (m.rows||'').split('\n').slice(0,4).forEach(function(l){
-      var pp=l.split('|');
-      rowsHtml+='<div class="mc-row"><span>'+esc(pp[0])+'</span><b>'+esc(pp[1]||'')+'</b></div>';
-    });
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div>'+rowsHtml;
-    js='';
-  }else if(m.type==='chart'){
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div id="bars" style="display:flex;align-items:flex-end;gap:4px;height:60px;margin-top:8px"></div>';
-    js=body()+"var base=Number(d.value)||50;var bars=el('bars');for(var i=0;i<7;i++){var h=Math.max(12,Math.min(96,base*0.6+Math.sin(i*1.7)*15+Math.random()*22));var b=document.createElement('div');b.style.cssText='flex:1;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:4px 4px 2px 2px;height:'+h+'%';bars.appendChild(b);}";
-  }else if(m.type==='dynlist'){
-    html='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div id="rows" style="margin-top:6px"></div>';
-    js=body()+"var rows=el('rows');(d.items||[]).slice(0,4).forEach(function(it){var r=document.createElement('div');r.className='mc-row';r.innerHTML='<span style=\"overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%\">'+(it.t||'')+'</span><span style=\"color:#8a8f99\">'+(it.s||'')+'</span>';rows.appendChild(r);});if(!(d.items||[]).length)rows.innerHTML='<div class=\"mc-desc\">暂无数据</div>';";
-  }
-  css+='\nfunction fmt(v){return (typeof v==="number")?v.toLocaleString("zh-CN"):v;}';
-  return {html:html,css:css,js:js};
-}
 /* ---------- 模块库:8 个预置模块 ---------- */
 var PRESETS=[
  {k:'latestComments',name:'最新评论',ic:'💬',ds:'待审评论实时流，点击进审核',
@@ -272,119 +219,13 @@ var PRESETS=[
    css:'body{padding:12px;font-family:-apple-system,"PingFang SC",sans-serif}.hd{font-size:11.5px;font-weight:700;color:#8a8f99;margin-bottom:6px}textarea{width:100%;height:64px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:8px;font-family:inherit;font-size:12.5px;resize:none;box-sizing:border-box;background:rgba(255,255,255,.5);outline:none}button{margin-top:6px;width:100%;padding:8px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit}#st{font-size:11px;color:#30D158;margin-top:4px;height:14px}',
    js:'host.storage("mynote").then(function(v){document.getElementById("ta").value=v||"";});document.getElementById("sv").onclick=function(){var v=document.getElementById("ta").value;host.storage("mynote",v).then(function(){document.getElementById("st").textContent="已保存 ✓";setTimeout(function(){document.getElementById("st").textContent="";},1500);});};'}};}}
 ];
-function openModLib(){
-  closeSub('pg-mod-editor');
-  openSub('pg-lib');
-  var body=document.getElementById('modLibBody');
-  var installed={};customModules.forEach(function(m){installed[m.libk]=true;});
-  body.innerHTML='<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">点击安装到「'+esc(panels[curPanel]?panels[curPanel].name:'网站')+'」面板 · 装完可改可删</div>'+
-    PRESETS.map(function(p){
-      var has=installed[p.k];
-      return '<div class="card" style="padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">'+
-        '<div class="crud-ic" style="font-size:17px">'+p.ic+'</div>'+
-        '<div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700">'+esc(p.name)+'</div><div style="font-size:11.5px;color:var(--ink-3)">'+esc(p.ds)+'</div></div>'+
-        (has?'<span class="chip chip-pub">已装</span>':'<button style="padding:8px 14px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="installPreset(\''+p.k+'\')">安装</button>')+
-        '</div>';
-    }).join('');
-}
-function installPreset(k){
-  var p=null;PRESETS.forEach(function(x){if(x.k===k)p=x;});
-  if(!p)return;
-  var panel=(typeof presetPanel==='string'&&presetPanel)?presetPanel:(curPanel||'site');
-  var m=p.make(panel);
-  m.libk=k;
-  customModules.push(m);saveModules();renderMyModules();
-  closeSub('pg-lib');closeSub('pg-mod-editor');
-  toast('「'+p.name+'」已装到当前面板 ✓');
-}
 
-function tplToCodeFlow(){
-  if(!edDraft||edDraft.mode!=='tpl')return;
-  askConfirm('转为代码模式？当前模板配置将生成等价代码，可继续魔改（不可撤销）。','转换').then(function(ok){
-    if(!ok)return;
-    collectDraft();
-    tplToCodeModule(edDraft);
-    renderEditor();
-    toast('已转为代码模式 ✓');
-  });
-}
-function tplToCodeModule(m){
-  var code=tplToCode(m);
-  m.mode='code';m.type='code';m.code=code;
-  if(m.data&&m.data.source&&FIELDS[m.data.source]&&FIELDS[m.data.source].real){
-    m.bind=m.data.source;m.api={url:'',path:''};
-  }else{m.bind='none';m.api={url:'',path:''};}
-  return m;
-}
 var customModules=[];
 try{customModules=JSON.parse(localStorage.getItem('customModules')||'[]');}catch(e){customModules=[]}
 customModules.forEach(function(m){if(!m.panel)m.panel='site';});
-function saveModules(){try{localStorage.setItem('customModules',JSON.stringify(customModules));}catch(e){toast('存储空间不足');}}
 var modTimers={};
 /* esc/escAttr 已迁至 modules/site/data/format.js（S2），经全局过渡层提供 */
-function fmtVal(v){return (typeof v==='number')?v.toLocaleString('zh-CN'):v;}
 var REAL_CACHE={};
-function resolveData(m){
-  var d=m.data||{};
-  if(d.source==='manual')return {value:d.manual,unit:m.unit||''};
-  var f=FIELDS[d.source];
-  if(!f)return {value:'--',unit:''};
-  if(f.real==='uptime'){var v=REAL_CACHE.uptimeDays;return {value:(v!=null?v:'--'),unit:m.unit||f.unit||''};}
-  if(f.real==='pending')return {value:(PEND.cmt||0)+(PEND.msg||0)+(PEND.cht||0),unit:m.unit||f.unit||''};
-  if(f.real==='db'){var db=REAL_CACHE.dbSizeMb;return {value:(db!=null?db:'--'),unit:m.unit||'MB'};}
-  return {value:f.get(),unit:m.unit||f.unit||''};
-}
-function resolveCodeData(m){
-  if(m.bind==='api')return {value:(m.cacheVal!==undefined?m.cacheVal:'--')};
-  if(m.bind&&FIELDS[m.bind]){var f=FIELDS[m.bind];return {value:f.get(),name:f.name,unit:f.unit||''};}
-  return {};
-}
-function fetchApiData(m,cb){
-  try{
-    fetch(m.api.url).then(function(r){return r.json();}).then(function(j){
-      var val=j;
-      if(m.api.path){String(m.api.path).split('.').forEach(function(p){if(val&&p)val=val[p];});}
-      m.cacheVal=val;cb({value:val});
-    }).catch(function(){cb({fetchError:true,value:(m.cacheVal!==undefined?m.cacheVal:'--')});});
-  }catch(e){cb({fetchError:true,value:'--'});}
-}
-function accRgb(hex){
-  var h=String(hex||'').replace('#','');
-  if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
-  var n=parseInt(h,16);
-  if(isNaN(n))return '10,132,255';
-  return ((n>>16)&255)+','+((n>>8)&255)+','+(n&255);
-}
-function codeDoc(m,data){
-  var c=m.code||{};
-  var base=backBase();
-  var theme=document.querySelector('.phone').classList.contains('dark')?'dark':'light';
-  var shim='(function(){var rid=0,pend={},MID=__MID__;'+
-    'window.addEventListener("message",function(e){var d=e.data||{};if(d.__modres&&pend[d.rid]){pend[d.rid](d);delete pend[d.rid];}});'+
-    'function rpc(msg){msg.id=MID;return new Promise(function(res){var id=++rid;msg.rid=id;pend[id]=res;parent.postMessage(msg,"*");setTimeout(function(){if(pend[id]){delete pend[id];res({err:"timeout"});}},8000);});}'+
-    'window.host={data:__DATA__,theme:__THEME__,base:__BASE__,refresh:function(){parent.postMessage({__mod:"refresh",id:__MID__},"*");},'+
-    'api:function(path,opts){return rpc({__mod:"api",path:path,opts:opts||{}}).then(function(r){if(r.err)throw new Error(r.err);return r.data;});},'+
-    'storage:function(key,val){return rpc({__mod:"storage",key:key,value:val}).then(function(r){return r.value;});},'+
-    'nav:function(scr){parent.postMessage({__mod:"nav",scr:scr},"*");},'+
-    'open:function(url){parent.postMessage({__mod:"open",url:url},"*");},'+
-    'play:function(url){parent.postMessage({__mod:"play",url:url},"*");}};'+
-    'function repH(){var h=Math.max(40,document.documentElement.scrollHeight||document.body.scrollHeight||40);parent.postMessage({__mod:"height",id:__MID__,h:h},"*");}'+
-    'try{new ResizeObserver(repH).observe(document.body);}catch(e){}'+
-    'setTimeout(repH,60);setTimeout(repH,300);setTimeout(repH,900);setInterval(repH,1000);'+
-    'try{__USERJS__}catch(e){document.body.innerHTML="<div style=\\"padding:14px;color:#FF453A;font:600 13px sans-serif\\">⚠️ 模块出错："+e.message+"</div>";}'+
-    '})();';
-  var userJs=c.js||'';
-  function repAll(str,key,val){return str.split(key).join(val);}
-  shim=repAll(shim,'__DATA__',JSON.stringify(data||{}));
-  shim=repAll(shim,'__THEME__',JSON.stringify(theme));
-  shim=repAll(shim,'__BASE__',JSON.stringify(base));
-  shim=repAll(shim,'__MID__',JSON.stringify(m.id));
-  shim=repAll(shim,'__USERJS__',userJs);
-  var acc=getComputedStyle(document.querySelector('.phone')).getPropertyValue('--accent').trim()||'#0A84FF';
-  var acc2=getComputedStyle(document.querySelector('.phone')).getPropertyValue('--accent2').trim()||'#5E5CE6';
-  return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>:root{--accent:'+acc+';--accent2:'+acc2+';--accent-rgb:'+accRgb(acc)+'}html,body{margin:0;font-family:-apple-system,"PingFang SC",sans-serif;overflow:hidden}'+(c.css||'')+'</style></head><body>'+(c.html||'')+
-  '<scr'+'ipt>'+shim+'<\/scr'+'ipt></body></html>';
-}
 
 /* 模块消息分发:高度自适应/刷新/API 代理/存储/导航 */
 window.addEventListener('message',function(e){
@@ -428,268 +269,10 @@ window.addEventListener('message',function(e){
 });
 /* ---- 真实审核数据(Kirameku 后端) ---- */
 
-function renderMyModules(){
-  /* 按面板分发:每个面板渲染自己名下的自定义模块 */
-  renderPanelMods('site','myMods');
-  Object.keys(panels).filter(function(k){return panels[k].custom&&!panels[k].closed;}).forEach(function(k){
-    renderPanelMods(k,'mods-'+k);
-  });
-}
 /* ---------- 真分区:面板内分组容器 ---------- */
 var PANEL_SECTIONS={};
 try{PANEL_SECTIONS=JSON.parse(localStorage.getItem('panelSections')||'{}');}catch(e){PANEL_SECTIONS={};}
-function saveSections(){try{localStorage.setItem('panelSections',JSON.stringify(PANEL_SECTIONS));}catch(e){}}
-function addRealSection(pk){
-  var arr=PANEL_SECTIONS[pk]||(PANEL_SECTIONS[pk]=[]);
-  arr.push({id:'s'+Date.now(),name:'新分区'});
-  saveSections();renderMyModules();
-  toast('分区已添加 · 点名称可改名，✕ 删除（模块回落默认区）');
-}
-function renameSection(pk,sid,name){
-  var arr=PANEL_SECTIONS[pk]||[];
-  var sec=null;arr.forEach(function(x){if(x.id===sid)sec=x;});
-  if(sec&&name.trim()){sec.name=name.trim();saveSections();renderMyModules();}
-}
-function delSection(pk,sid){
-  var arr=PANEL_SECTIONS[pk]||[];
-  PANEL_SECTIONS[pk]=arr.filter(function(x){return x.id!==sid;});
-  saveSections();renderMyModules();
-  toast('分区已删除 · 其中模块回落默认区');
-}
-function renderModInto(m,g){
-  try{
-    if(m.type==='code')renderCodeModule(m,g);
-    else renderTplModule(m,g);
-    m._last=Date.now();
-  }catch(err){
-    var e=document.createElement('div');e.className='mod-err';
-    e.textContent='⚠️ 模块「'+m.name+'」出错：'+err.message;
-    g.appendChild(e);
-  }
-}
-function renderPanelMods(pk,gid){
-  var host=document.getElementById(gid);if(!host)return;
-  host.classList.remove('mod-grid'); /* 容器只作分区外壳,网格由内层自建(避免双网格嵌套压缩) */
-  /* 渲染进一个包装容器，分区结构在里面 */
-  var root=document.createElement('div');
-  var list=customModules.filter(function(m){return m.panel===pk&&m.enabled;});
-  var secs=PANEL_SECTIONS[pk]||[];
-  if(!list.length&&!secs.length){
-    host.innerHTML='<div class="mod-err" style="background:var(--glass);border-color:var(--glass-border);color:var(--ink-3);font-weight:600">本面板暂无自定义模块 · 点「＋ 添加」或去二次开发中心新建</div>';
-    return;
-  }
-  function gridFor(container,mods){
-    var g=document.createElement('div');g.className='mod-grid';
-    mods.forEach(function(m){renderModInto(m,g);});
-    container.appendChild(g);
-    return g;
-  }
-  var first=true;
-  /* 默认区（无分区标题，放最前） */
-  var defMods=list.filter(function(m){return !m.sec||!secs.some(function(x){return x.id===m.sec;});});
-  if(defMods.length){gridFor(root,defMods);first=false;}
-  /* 命名分区 */
-  secs.forEach(function(sec){
-    var head=document.createElement('div');
-    head.className='section-title';
-    head.style.margin='16px 0 8px';
-    head.innerHTML='<span contenteditable="true" spellcheck="false" style="outline:none;min-width:40px;display:inline-block" onblur="renameSection(\''+pk+'\',\''+sec.id+'\',this.textContent)">'+esc(sec.name)+'</span>'+
-      '<span class="more" style="color:var(--red);cursor:pointer" onclick="askConfirm(\'删除分区「'+esc(sec.name)+'」？其中模块回落默认区\').then(function(ok){if(ok)delSection(\''+pk+'\',\''+sec.id+'\');})">✕</span>';
-    root.appendChild(head);
-    gridFor(root,list.filter(function(m){return m.sec===sec.id;}));
-  });
-  host.innerHTML='';
-  host.appendChild(root);
-  customModules.forEach(function(m){
-    if(m.enabled&&m.panel===pk&&m.refresh>0){
-      if(modTimers[m.id])clearTimeout(modTimers[m.id]);
-      (function(mm){
-        modTimers[mm.id]=setTimeout(function(){if(mm.enabled)renderMyModules();},mm.refresh*1000);
-      })(m);
-    }
-  });
-}
-function refreshMyModules(){
-  customModules.forEach(function(m){m._last=0;});
-  renderMyModules();
-  toast('模块数据已刷新');
-}
-function renderTplModule(m,g){
-  var d=resolveData(m);
-  var wq=m.w||'h';
-  var card=document.createElement('div');card.className='mod-card'+(wq==='f'?' w-f':(wq==='q'?' w-q':''));
-  if(m.hc==='c')card.classList.add('h-c');
-  card.dataset.mid=m.id;
-  var v=fmtVal(d.value),icon=m.icon||'🔢',name=esc(m.name);
-  var half=wq!=='f';
-  if(m.type==='stat'){
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-val">'+v+'<small>'+esc(d.unit)+'</small></div>'+
-      (half?'':'<div class="mc-desc">实时数据</div>');
-  }else if(m.type==='progress'){
-    var pv=Math.max(0,Math.min(100,Number(d.value)||0));
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-val">'+pv+'<small>%</small></div>'+
-      (half?'':'<div class="mc-bar"><i style="width:'+pv+'%"></i></div><div class="mc-desc">进度 · 实时</div>');
-  }else if(m.type==='status'){
-    var ok=(Number(d.value)||0)<80;
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-desc"><span class="dot" style="background:'+(ok?'var(--green)':'var(--orange)')+';display:inline-block;margin-right:6px"></span>'+v+esc(d.unit)+(half?'':' · '+(ok?'运行正常':'负载偏高'))+'</div>';
-  }else if(m.type==='toggle'){
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="mc-val" style="font-size:17px">'+((Number(d.value)||0)?'已开启':'已关闭')+'</div>';
-  }else if(m.type==='list'){
-    var lines=(m.rows||'示例项目|—').split('\n');
-    var rows=(half?lines.slice(0,1):lines.slice(0,4)).map(function(l){
-      var pp=l.split('|');
-      return '<div class="mc-desc" style="display:flex;justify-content:space-between"><span>'+esc(pp[0])+'</span><b>'+esc(pp[1]||'')+'</b></div>';
-    }).join('');
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div>'+rows;
-  }else if(m.type==='chart'){
-    var base=Number(d.value)||50;
-    var nB=half?5:7,bh=half?54:70,bars='';
-    for(var i=0;i<nB;i++){
-      var h=Math.max(12,Math.min(96,base*0.6+Math.sin(i*1.7)*15+Math.random()*22));
-      bars+='<div class="bar" style="height:'+h+'%"></div>';
-    }
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div><div class="bars" style="height:'+bh+'px;margin-top:10px">'+bars+'</div>';
-  }else if(m.type==='dynlist'){
-    var items=(m._dynCache||[]);
-    var rows=items.slice(0,half?3:4).map(function(it){
-      return '<div class="mc-desc" style="display:flex;gap:8px;justify-content:space-between"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(it.t||'')+'</span><span style="color:var(--ink-3);flex-shrink:0">'+esc(it.s||'')+'</span></div>';
-    }).join('')||'<div class="mc-desc">'+(m._dynLoading?'加载中…':'暂无数据')+'</div>';
-    card.innerHTML='<div class="mc-name"><i class="ic">'+icon+'</i>'+name+'</div>'+rows;
-    if(m._dynLoading!==false){
-      m._dynLoading=true;
-      fetchDyn(m,function(dd){
-        m._dynLoading=false;
-        var g2=card.parentNode;
-        if(g2){card.remove();renderTplModule(m,g2);}
-      });
-    }
-  }
-  card.insertAdjacentHTML('beforeend','<button class="sz-arrow" title="切换大小">⤢</button>');
-  card.querySelector('.sz-arrow').addEventListener('click',function(e){e.stopPropagation();cycleModWidth(m.id);});
-  card.addEventListener('pointerdown',function(e){
-    var px=e.clientX,py=e.clientY;
-    var t=setTimeout(function(){card.classList.add('lp');startModDrag(card,m.id,e);},350);
-    card.addEventListener('pointermove',function mv(ev){
-      if(Math.abs(ev.clientX-px)>10||Math.abs(ev.clientY-py)>10){clearTimeout(t);card.removeEventListener('pointermove',mv);}
-    });
-    card.addEventListener('pointerup',function(){clearTimeout(t);},{once:true});
-  });
-  g.appendChild(card);
-}
-function renderCodeModule(m,g){
-  var f=document.createElement('iframe');
-  f.className='mod-frame';
-  f.style.height=(m.size==='full'?150:110)+'px';
-  f.setAttribute('sandbox','allow-scripts allow-popups');
-  var wrap=document.createElement('div');
-  wrap.className='mod-frame-wrap'+((m.w||'h')==='f'?' w-f':((m.w||'h')==='q'?' w-q':''));
-  wrap.style.position='relative';wrap.dataset.mid=m.id;
-  wrap.appendChild(f);
-  var ab=document.createElement('button');ab.className='sz-arrow';ab.title='切换大小';ab.innerHTML='⤢';
-  ab.addEventListener('click',function(e){e.stopPropagation();cycleModWidth(m.id);});
-  wrap.appendChild(ab);
-  wrap.addEventListener('pointerdown',function(e){
-    var px=e.clientX,py=e.clientY;
-    var t=setTimeout(function(){wrap.classList.add('lp');startModDrag(wrap,m.id,e);},350);
-    wrap.addEventListener('pointermove',function mv(ev){
-      if(Math.abs(ev.clientX-px)>10||Math.abs(ev.clientY-py)>10){clearTimeout(t);wrap.removeEventListener('pointermove',mv);}
-    });
-    wrap.addEventListener('pointerup',function(){clearTimeout(t);},{once:true});
-  });
-  g.appendChild(wrap);
-  var paint=function(data){try{f.setAttribute('srcdoc',codeDoc(m,data));}catch(e){}};
-  if(m.bind==='api'&&m.api&&m.api.url){
-    if(m.refresh&&m.refresh>0){
-      if(modTimers[m.id])clearInterval(modTimers[m.id]);
-      (function(mm,fr){
-        modTimers[mm.id]=setInterval(function(){
-          if(!mm.enabled)return;
-          fetchApiData(mm,function(d){fr.setAttribute('srcdoc',codeDoc(mm,d));});
-        },mm.refresh*1000);
-      })(m,f);
-    }
-    fetchApiData(m,paint);
-  }else{
-    paint(resolveCodeData(m));
-  }
-}
-function openModManager(){closeDrawer();renderClosedPanels();renderModList();renderExamples();renderFieldDict();openSub('pg-mods');}
-function renderClosedPanels(){
-  var l=document.getElementById('closedPanels');if(!l)return;l.innerHTML='';
-  var closed=Object.keys(panels).filter(function(k){return panels[k].closed;});
-  if(!closed.length){
-    l.innerHTML='<div class="mod-err" style="background:var(--glass);border-color:var(--glass-border);color:var(--ink-3);font-weight:600">暂无已关闭的面板</div>';
-    return;
-  }
-  closed.forEach(function(k){
-    var p=panels[k];
-    var r=document.createElement('div');r.className='mod-row';
-    r.innerHTML='<div class="ic" style="background:'+p.bg+'">'+p.icon+'</div><div class="tx"><b>'+esc(p.name)+'</b><span>已关闭 · 恢复后回到面板列表</span></div><button class="mini-btn" style="margin-left:auto;color:var(--accent);border-color:rgba(var(--accent-rgb),.35)" onclick="restorePanel(\''+k+'\')">恢复</button>';
-    l.appendChild(r);
-  });
-}
-function restorePanel(k){
-  var p=panels[k];if(!p)return;
-  p.closed=false;p.enabled=true;renderPanels();renderClosedPanels();
-  toast('已恢复「'+p.name+'」面板');
-}
 /* ---- 自定义面板:创建 · 独立屏 · 持久化 ---- */
-function ensureCustomScreen(key,name,icon){
-  var id='scr-'+key;
-  if(document.getElementById(id))return id;
-  var s=document.createElement('div');s.className='screen';s.id=id;
-  s.innerHTML='<div class="page-head"><div class="nav-title">'+esc(name)+'</div><button class="page-fab" onclick="openAddFor(\''+key+'\')">＋</button></div>'+
-    '<div class="nav-sub">'+icon+' 自定义面板 · 自由组合模块与分区</div>'+
-    '<div class="section-title">自定义模块 <span class="more" onclick="openAddFor(\''+key+'\')">＋ 添加</span></div>'+
-    '<div class="mod-grid" id="mods-'+key+'"></div>'+
-    '<div class="section-title">分区标题 <span class="more" onclick="addSectionTo(\''+key+'\')">＋ 添加</span></div>'+
-    '<div id="secs-'+key+'"></div>';
-  document.querySelector('.screens').appendChild(s);
-  return id;
-}
-function createPanelFlow(){var f=document.getElementById('npForm');f.style.display=f.style.display==='block'?'none':'block';}
-function saveCustomPanels(){
-  try{localStorage.setItem('customPanels',JSON.stringify(Object.keys(panels).filter(function(k){return panels[k].custom;}).map(function(k){return {key:k,name:panels[k].name,icon:panels[k].icon,bg:panels[k].bg};})));}catch(e){}
-}
-function doCreatePanel(){
-  var nm=document.getElementById('npName').value.trim();
-  var ic=document.getElementById('npIcon').value.trim()||'🧩';
-  if(!nm){toast('请输入面板名称');return}
-  var key='p'+Date.now();
-  var bgs=['linear-gradient(135deg,var(--accent),var(--accent2))','linear-gradient(135deg,#30D158,#00C7BE)','linear-gradient(135deg,#BF5AF2,#FF375F)','linear-gradient(135deg,#FF9F0A,#FF453A)'];
-  panels[key]={name:nm,icon:ic,bg:bgs[Math.floor(Math.random()*bgs.length)],def:ensureCustomScreen(key,nm,ic),enabled:true,closed:false,pinned:false,custom:true,sections:[]};
-  saveCustomPanels();renderPanels();renderClosedPanels();
-  closeSub('pg-mods');closeSub('pg-mod-editor');
-  switchPanel(key);
-  toast('已创建「'+nm+'」面板');
-}
-function addSectionTo(key){
-  var host=document.getElementById('secs-'+key);if(!host)return;
-  var sec=document.createElement('div');sec.className='section-title';
-  sec.contentEditable=true;sec.spellcheck=false;sec.textContent='新分区';
-  host.appendChild(sec);sec.scrollIntoView({behavior:'smooth'});toast('已添加分区标题 · 点击文字可改名');
-}
-function renderModList(){
-  var l=document.getElementById('modList');if(!l)return;l.innerHTML='';
-  if(!customModules.length){
-    l.innerHTML='<div class="mod-err" style="background:var(--glass);border-color:var(--glass-border);color:var(--ink-3);font-weight:600">还没有模块 · 点右上「＋ 新建」</div>';
-    return;
-  }
-  customModules.forEach(function(m){
-    var r=document.createElement('div');r.className='mod-row';
-    var tInfo=m.type==='code'?{icon:'⌨️',name:'代码模式'}:(TEMPLATES.find(function(t){return t.t===m.type;})||{icon:'🧩',name:'模板'});
-    r.innerHTML='<div class="ic" style="background:'+(m.type==='code'?'linear-gradient(135deg,var(--accent2),#BF5AF2)':'linear-gradient(135deg,var(--accent),var(--accent2))')+'">'+tInfo.icon+'</div>'+
-      '<div class="tx"><b>'+esc(m.name)+'</b><span>'+(panels[m.panel]?panels[m.panel].name:'网站')+'面板 · '+tInfo.name+' · '+(m.enabled?'启用中':'已停用')+'</span></div>'+
-      '<div class="ops">'+
-      '<button class="mini-btn" title="编辑" onclick="editModule(\''+m.id+'\')">✏️</button>'+
-      '<button class="mini-btn" title="复制" onclick="copyModule(\''+m.id+'\')">⧉</button>'+
-      '<button class="mini-btn" title="导出分享码" data-k="'+m.id+'" onclick="exportModuleCodeByEl(this)">⤓</button>'+
-      '<button class="mini-btn" title="'+(m.enabled?'停用':'启用')+'" onclick="toggleModule(\''+m.id+'\')">'+(m.enabled?'⏸':'▶')+'</button>'+
-      '<button class="mini-btn" title="删除" onclick="delModule(\''+m.id+'\')">🗑️</button>'+
-      '</div>';
-    l.appendChild(r);
-  });
-}
 var EXAMPLES=[
   {icon:'🕐',name:'实时时钟',desc:'代码模式 · 纯 JS 每秒刷新',mod:{name:'实时时钟',type:'code',mode:'code',size:'half',enabled:true,refresh:0,bind:'none',api:{url:'',path:''},
     code:{html:'<div id="t">--:--:--</div>',css:'body{display:flex;align-items:center;justify-content:center;height:100vh}#t{font:700 26px ui-monospace,Consolas,monospace;color:#1C1C1E}',
@@ -701,185 +284,9 @@ var EXAMPLES=[
     code:{html:'<div id="w">加载中…</div>',css:'body{display:flex;align-items:center;justify-content:center;height:100vh}#w{font:700 15px sans-serif;color:#1C1C1E;text-align:center;line-height:1.8}',
     js:'fetch("https://api.open-meteo.com/v1/forecast?latitude=39.9&longitude=116.4&current_weather=true").then(function(r){return r.json();}).then(function(d){var w=d.current_weather;document.getElementById("w").innerHTML="北京 "+w.temperature+"°C<br>风速 "+w.windspeed+" km/h";}).catch(function(){document.getElementById("w").textContent="接口暂时不可用";});'}}}
 ];
-function renderExamples(){
-  var l=document.getElementById('exampleList');if(!l)return;l.innerHTML='';
-  EXAMPLES.forEach(function(ex,i){
-    var c=document.createElement('div');c.className='ex-card';
-    c.innerHTML='<div class="ic">'+ex.icon+'</div><div><b>'+ex.name+'</b><span>'+ex.desc+'</span></div><span class="add">＋ 添加</span>';
-    c.onclick=function(){addExample(i);};
-    l.appendChild(c);
-  });
-}
-function addExample(i){
-  var c=JSON.parse(JSON.stringify(EXAMPLES[i].mod));c.id='m'+Date.now();c.icon=EXAMPLES[i].icon;
-  customModules.push(c);saveModules();renderModList();renderMyModules();
-  toast('已添加示例「'+EXAMPLES[i].name+'」');
-}
 var presetPanel=null;
-function openAddFor(pk){presetPanel=pk;newModuleFlow();}
-function newModuleFlow(){
-  edDraft=null;
-  var pn=presetPanel||'site';
-  var b=document.getElementById('edBody');
-  document.getElementById('edTitle').textContent='新建模块';
-  b.innerHTML='<div class="card" style="padding:14px 18px"><div style="font-size:13px;color:var(--ink-2);line-height:1.6">选择创建方式：「模板模式」选好形态、绑上数据即可用；「代码模式」用 HTML/CSS/JS 自由编写，可接入任意开放接口，理论上限 = 你能写出什么。<b>将添加到「'+panels[pn].name+'」面板</b>，稍后可在编辑器里更改所属面板。</div></div>'+
-    '<div class="tpl-grid" style="margin-top:12px">'+
-    '<div class="tpl-card" onclick="startEditor(\'tpl\')"><div class="ti">🧩</div><div class="tx">模板模式</div><div class="ds">7 种形态 · 绑数据即用</div></div>'+
-    '<div class="tpl-card" onclick="startEditor(\'code\')"><div class="ti">⌨️</div><div class="tx">代码模式</div><div class="ds">HTML/CSS/JS · 理论无限</div></div>'+
-    '<div class="tpl-card" onclick="openModLib()" style="grid-column:1/-1"><div class="ti">📦</div><div class="tx">模块库</div><div class="ds">8 个开箱即用的常用模块 · 装上就能用</div></div>'+
-    '</div>';
-  openSub('pg-mod-editor');
-}
 /* ---- 编辑器 ---- */
 var edDraft=null,edTab='html',edCM=null;
-function startEditor(mode){
-  edDraft={id:'m'+Date.now(),mode:mode,type:mode==='tpl'?'stat':'code',name:'',icon:mode==='tpl'?'🔢':'⌨️',size:'half',w:'h',hc:'s',dynsrc:'latestComments',sec:'',enabled:true,panel:presetPanel||'site',
-    data:{source:'cpu',manual:50},unit:'',rows:'示例项目|值',refresh:0,
-    bind:'none',api:{url:'',path:''},code:{html:'<div id="box">Hello 模块</div>',css:'body{padding:16px}#box{font:700 18px sans-serif}',js:'// host.data 为绑定数据,host.refresh() 触发刷新\ndocument.getElementById("box").textContent="运行成功 ✓";'},
-    api:{url:'',path:''}};
-  presetPanel=null;
-  renderEditor();
-}
-function editModule(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  edDraft=JSON.parse(JSON.stringify(m));
-  renderEditor();
-}
-function collectDraft(){
-  if(edCM){edCM.save();}
-
-  var n=document.getElementById('edName');if(n)edDraft.name=n.value.trim();
-  var i=document.getElementById('edIcon');if(i)edDraft.icon=i.value||'🔢';
-  var u=document.getElementById('edUnit');if(u)edDraft.unit=u.value;
-  var r=document.getElementById('edRefresh');if(r)edDraft.refresh=+r.value;
-  var mv=document.getElementById('edManual');if(mv)edDraft.data.manual=+mv.value;
-  var rt=document.getElementById('edRows');if(rt)edDraft.rows=rt.value;
-  var ta=document.getElementById('codeTa');if(ta)edDraft.code[edTab]=ta.value;
-  var au=document.getElementById('edApiUrl');if(au)edDraft.api.url=au.value;
-  var ap=document.getElementById('edApiPath');if(ap)edDraft.api.path=ap.value;
-}
-function setTpl(t){collectDraft();edDraft.type=t;renderEditor();}
-function setSource(v){collectDraft();edDraft.data.source=v;renderEditor();}
-function setW(w){collectDraft();edDraft.w=w;renderEditor();}
-function setHc(h){collectDraft();edDraft.hc=h;renderEditor();}
-function setSize(s){collectDraft();edDraft.size=s;edDraft.w=(s==='full'?'f':'h');renderEditor();}
-function setBind(v){collectDraft();edDraft.bind=v;renderEditor();}
-function setEdTab(t){
-  if(edCM){edDraft.code[edTab]=edCM.getValue();edCM.toTextArea();edCM=null;}
-  collectDraft();edTab=t;renderEditor();
-}
-function renderEditor(){
-  document.getElementById('edTitle').textContent=edDraft.name?('编辑 · '+edDraft.name):'编辑模块';
-  var b=document.getElementById('edBody');
-  var h='<div class="fld"><label>模块名称</label><input id="edName" value="'+escAttr(edDraft.name)+'" placeholder="给模块起个名字" oninput="edDraft.name=this.value"></div>';
-    h+='<div class="fld"><label>宽度</label><div class="seg2">'+
-      [['q','¼ 窄'],['h','½ 标准'],['f','全宽']].map(function(o){return '<div class="opt'+((edDraft.w||'h')===o[0]?' on':'')+'" data-v="'+o[0]+'" onclick="setW(this.dataset.v)">'+o[1]+'</div>';}).join('')+'</div></div>';
-    h+='<div class="fld"><label>高度</label><div class="seg2">'+
-      [['s','标准'],['c','紧凑']].map(function(o){return '<div class="opt'+((edDraft.hc||'s')===o[0]?' on':'')+'" data-v="'+o[0]+'" onclick="setHc(this.dataset.v)">'+o[1]+'</div>';}).join('')+'</div></div>';
-  h+='<div class="fld"><label>所属面板(显示在它的页面里)</label><select onchange="edDraft.panel=this.value">'+
-    Object.keys(panels).filter(function(k){return !panels[k].closed;}).map(function(k){
-      return '<option value="'+k+'"'+(edDraft.panel===k?' selected':'')+'>'+panels[k].name+'</option>';
-    }).join('')+'</select></div>';
-  h+='<div class="fld"><label>所属分区(可选)</label><select onchange="edDraft.sec=this.value">'+
-    '<option value=""'+(!edDraft.sec?' selected':'')+'>默认区</option>'+
-    (PANEL_SECTIONS[edDraft.panel]||[]).map(function(x){return '<option value="'+x.id+'"'+(edDraft.sec===x.id?' selected':'')+'>'+esc(x.name)+'</option>';}).join('')+'</select></div>';
-  h+='<div class="fld"><label>刷新策略</label><select id="edRefresh" onchange="edDraft.refresh=+this.value">'+
-    [[0,'手动刷新'],[30,'每 30 秒'],[60,'每 1 分钟'],[300,'每 5 分钟']].map(function(o){
-      return '<option value="'+o[0]+'"'+(edDraft.refresh===o[0]?' selected':'')+'>'+o[1]+'</option>';
-    }).join('')+'</select></div>';
-  if(edDraft.mode==='tpl'){
-    h+='<div class="fld"><label>模板形态</label><div class="tpl-grid">'+TEMPLATES.map(function(t){
-      return '<div class="tpl-card'+(edDraft.type===t.t?' on':'')+'" onclick="setTpl(\''+t.t+'\')"><div class="ti">'+t.icon+'</div><div class="tx">'+t.name+'</div><div class="ds">'+t.ds+'</div></div>';
-    }).join('')+'</div></div>';
-    h+='<div class="fld"><label>图标(任意 emoji)</label><input id="edIcon" value="'+escAttr(edDraft.icon)+'" oninput="edDraft.icon=this.value"></div>';
-    if(edDraft.type==='dynlist'){
-      h+='<div class="fld"><label>动态数据源</label><select onchange="edDraft.dynsrc=this.value">'+
-        Object.keys(DYN_SOURCES).map(function(k){return '<option value="'+k+'"'+(edDraft.dynsrc===k?' selected':'')+'>'+DYN_SOURCES[k].name+'</option>';}).join('')+'</select></div>';
-    }else{
-      h+='<div class="fld"><label>数据源</label><select id="edSource" onchange="setSource(this.value)">'+
-        Object.keys(FIELDS).map(function(k){return '<option value="'+k+'"'+(edDraft.data.source===k?' selected':'')+'>'+FIELDS[k].name+'</option>';}).join('')+
-        '<option value="manual"'+(edDraft.data.source==='manual'?' selected':'')+'>手动数值</option></select></div>';
-    }
-    if(edDraft.data.source==='manual')h+='<div class="fld"><label>数值</label><input type="number" value="'+(edDraft.data.manual||0)+'" oninput="edDraft.data.manual=+this.value"></div>';
-    h+='<div class="fld"><label>单位 / 后缀</label><input value="'+escAttr(edDraft.unit||'')+'" oninput="edDraft.unit=this.value"></div>';
-    if(edDraft.type==='list')h+='<div class="fld"><label>列表行(每行: 名称|值)</label><textarea rows="4" oninput="edDraft.rows=this.value">'+esc(edDraft.rows||'')+'</textarea></div>';
-    h+='<div class="fld"><label>实时预览</label><div class="mod-grid" id="edPrev"></div></div>';
-    h+='<button class="upload-btn" style="background:var(--glass);color:var(--ink-2);margin-top:2px" onclick="tplToCodeFlow()">⌨️ 转为代码模式（从这里开始魔改）</button>';
-  }else{
-    h+='<div class="ed-tabs">'+['html','css','js'].map(function(t){
-      return '<div class="ed-tab'+(edTab===t?' on':'')+'" onclick="setEdTab(\''+t+'\')">'+t.toUpperCase()+'</div>';
-    }).join('')+'</div>';
-    h+='<div class="code-wrap"><textarea class="code-ta" id="codeTa" spellcheck="false" oninput="edDraft.code.'+edTab+'=this.value">'+esc(edDraft.code[edTab]||'')+'</textarea></div>';
-    h+='<div class="fld"><label>数据接入(可选)</label><select onchange="setBind(this.value)">'+
-      '<option value="none"'+(!edDraft.bind||edDraft.bind==='none'?' selected':'')+'>不绑定(纯展示)</option>'+
-      '<option value="api"'+(edDraft.bind==='api'?' selected':'')+'>自定义 API</option>'+
-      Object.keys(FIELDS).map(function(k){return '<option value="'+k+'"'+(edDraft.bind===k?' selected':'')+'>'+FIELDS[k].name+'</option>';}).join('')+'</select></div>';
-    if(edDraft.bind==='api'){
-      h+='<div class="fld"><label>接口地址(返回 JSON)</label><input value="'+escAttr(edDraft.api.url)+'" placeholder="https://api.example.com/data" oninput="edDraft.api.url=this.value"></div>';
-      h+='<div class="fld"><label>取值路径(如 data.temp)</label><input value="'+escAttr(edDraft.api.path)+'" oninput="edDraft.api.path=this.value"></div>';
-    }
-    h+='<button class="upload-btn" onclick="runPreview()">▶ 运行预览</button>';
-    h+='<div id="edPrevHolder"></div>';
-    h+='<div class="card" style="padding:12px 14px;margin-top:12px"><div style="font-size:12px;color:var(--ink-2);line-height:1.7"><b>模块 API：</b>绑定数据通过 <b>host.data</b> 注入；代码里调 <b>host.refresh()</b> 可触发数据刷新；运行出错会在预览里直接显示。</div></div>';
-  }
-  h+='<div style="height:8px"></div>';
-  b.innerHTML=h;
-  if(edDraft.mode==='tpl'){renderEdPreview();}
-  else{
-    var holder=document.getElementById('edPrevHolder');
-    var f=document.createElement('iframe');f.className='mod-prev';f.setAttribute('sandbox','allow-scripts');
-    f.setAttribute('srcdoc','<!DOCTYPE html><html><body style="font:13px sans-serif;color:#888;padding:20px">点击「▶ 运行预览」查看效果</body></html>');
-    holder.appendChild(f);
-    var cta=document.getElementById('codeTa');
-    if(cta&&window.CodeMirror){
-      if(edCM){edCM.toTextArea();edCM=null;}
-      edCM=CodeMirror.fromTextArea(cta,{mode:edTab==='html'?'htmlmixed':edTab,lineNumbers:true,indentUnit:2,lineWrapping:true,viewportMargin:Infinity});
-      edCM.setSize('100%','240px');
-      edCM.on('change',function(){edDraft.code[edTab]=edCM.getValue();});
-    }
-  }
-  b.scrollTop=0;
-}
-function renderEdPreview(){
-  var g=document.getElementById('edPrev');if(!g)return;g.innerHTML='';
-  try{renderTplModule(edDraft,g);}catch(err){
-    g.innerHTML='<div class="mod-err">⚠️ '+err.message+'</div>';
-  }
-}
-function runPreview(){
-  if(edCM){edCM.save();}
-  collectDraft();
-  var f=document.querySelector('#edPrevHolder iframe');
-  if(f)f.setAttribute('srcdoc',codeDoc(edDraft,resolvePreviewData(edDraft)));
-}
-function resolvePreviewData(m){
-  if(m.bind==='api'&&m.api.url)return {value:'(运行时拉取)'};
-  return resolveData(m);
-}
-function saveModule(){
-  collectDraft();
-  if(!edDraft.name){toast('请先给模块起个名字');return;}
-  var i=customModules.findIndex(function(m){return m.id===edDraft.id;});
-  if(i>-1)customModules[i]=edDraft;else customModules.push(edDraft);
-  saveModules();renderMyModules();
-  closeSub('pg-mod-editor');renderModList();
-  toast('模块「'+edDraft.name+'」已保存');
-}
-function copyModule(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  var c=JSON.parse(JSON.stringify(m));c.id='m'+Date.now();c.name=m.name+' 副本';
-  customModules.push(c);saveModules();renderModList();toast('已复制「'+m.name+'」');
-}
-function toggleModule(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  m.enabled=!m.enabled;saveModules();renderModList();renderMyModules();
-  toast('「'+m.name+'」已'+(m.enabled?'启用':'停用'));
-}
-function delModule(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  customModules=customModules.filter(function(x){return x.id!==id;});
-  saveModules();renderModList();renderMyModules();toast('已删除「'+m.name+'」');
-}
 
 /* ---- 真实账号体系(JWT) ---- */
 var AUTH={token:"",user:null};
@@ -908,35 +315,6 @@ document.addEventListener('pointerdown',function(e){
   if(!e.target.closest('.mod-card.lp,.mod-wrap.lp'))
     document.querySelectorAll('.mod-card.lp,.mod-wrap.lp').forEach(function(c){c.classList.remove('lp');});
 },true);
-function cycleModWidth(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  m.w=(m.w==='q')?'h':((m.w==='h'||!m.w)?'f':'q');
-  saveModules();renderMyModules();
-  toast('宽度：'+(m.w==='q'?'¼ 窄':(m.w==='f'?'全宽':'½ 标准')));
-}
-function _oldToggleModuleSize(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  var gid='myMods';
-  var g=document.getElementById(gid);if(!g)return;
-  var card=g.querySelector('.mod-card[data-mid="'+id+'"],.mod-wrap[data-mid="'+id+'"]');
-  if(!card)return;
-  var first=card.getBoundingClientRect();
-  m.size=m.size==='full'?'half':'full';
-  saveModules();renderPanelMods(m.panel,gid);
-  var nc=g.querySelector('.mod-card[data-mid="'+id+'"],.mod-wrap[data-mid="'+id+'"]');
-  if(!nc)return;
-  var last=nc.getBoundingClientRect();
-  var dx=first.left-last.left,dy=first.top-last.top;
-  var sx=first.width/last.width,sy=first.height/last.height;
-  nc.style.transformOrigin='top left';
-  nc.style.transition='none';
-  nc.style.transform='translate('+dx+'px,'+dy+'px) scale('+sx+','+sy+')';
-  requestAnimationFrame(function(){
-    nc.style.transition='transform .45s cubic-bezier(.22,1,.36,1)';
-    nc.style.transform='';
-    setTimeout(function(){nc.style.transition='';},500);
-  });
-}
 
 /* ============ 重命名体系:导航 / 面板 / 区块标题 ============ */
 var NAV_DEF={site:[['scr-home','看板'],['scr-content','内容'],['scr-status','状态'],['scr-review','审核'],['scr-me','我的']]};
@@ -967,52 +345,7 @@ var cusSecN=0;
 })();
 
 /* ============ 分享码:导出 / 导入 ============ */
-function b64enc(obj){return btoa(unescape(encodeURIComponent(JSON.stringify(obj))));}
-function b64dec(s){return JSON.parse(decodeURIComponent(escape(atob(s))));}
-function showShareModal(title,bodyHtml){
-  var old=document.getElementById('shareModal');if(old)old.remove();
-  var ov=document.createElement('div');ov.id='shareModal';
-  ov.innerHTML='<div class="sh-box"><div class="sh-title">'+title+'</div>'+bodyHtml+'</div>';
-  document.querySelector('.phone').appendChild(ov);
-  ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
-  return ov;
-}
-function exportModuleCodeByEl(btn){exportModuleCode(btn.dataset.k);}
-function exportModuleCode(id){
-  var m=customModules.find(function(x){return x.id===id;});if(!m)return;
-  var code=b64enc(m);
-  var ov=showShareModal('导出分享码 · '+m.name,
-    '<textarea readonly id="shTa">'+code+'</textarea><div style="display:flex;gap:8px;margin-top:10px"><button class="upload-btn" style="flex:1;margin:0" id="shCopy">复制分享码</button><button class="mini-btn" style="width:auto;padding:0 16px;height:40px" onclick="this.closest(\'#shareModal\').remove()">关闭</button></div>');
-  ov.querySelector('#shCopy').onclick=function(){
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){toast('分享码已复制');});}
-    else{var t=ov.querySelector('#shTa');t.select();document.execCommand('copy');toast('已复制');}
-  };
-}
-function importModuleFlow(){
-  var ov=showShareModal('导入模块',
-    '<textarea id="impTa" style="height:130px" placeholder="粘贴模块分享码"></textarea><div style="display:flex;gap:8px;margin-top:10px"><button class="upload-btn" style="flex:1;margin:0" id="impDo">导入</button><button class="mini-btn" style="width:auto;padding:0 16px;height:40px" onclick="document.getElementById(\'shareModal\').remove()">取消</button></div>');
-  ov.querySelector('#impDo').onclick=function(){
-    try{
-      var m=b64dec(document.getElementById('impTa').value.trim());
-      if(!m.name||!m.type)throw new Error('bad');
-      m.id='m'+Date.now();m.enabled=true;m.closed=false;
-      if(!panels[m.panel])m.panel='site';
-      customModules.push(m);saveModules();renderModList();renderMyModules();
-      ov.remove();toast('已导入「'+m.name+'」');
-    }catch(e){toast('分享码无效,请检查后重试');}
-  };
-}
 /* ============ 内置字段字典 ============ */
-function renderFieldDict(){
-  var l=document.getElementById('fieldDict');if(!l)return;l.innerHTML='';
-  var descs={cpu:'系统实时采集',mem:'系统实时采集',disk:'系统实时采集',visitors:'站点统计',pv:'站点统计',comments:'站点统计',posts:'站点统计',study:'学习面板记录'};
-  Object.keys(FIELDS).forEach(function(k){
-    var f=FIELDS[k];
-    var r=document.createElement('div');r.className='mod-row';
-    r.innerHTML='<div class="ic" style="background:linear-gradient(135deg,var(--accent2),var(--accent))">'+(f.unit||'f')+'</div><div class="tx"><b>'+f.name+'</b><span>key: '+k+' · '+descs[k]+'</span></div>';
-    l.appendChild(r);
-  });
-}
 applyAllNames();
 
 renderMyModules();
@@ -1020,7 +353,6 @@ renderMyModules();
 /* ============ 毛玻璃质感调节:滑杆实时预览全 App 玻璃 ============ */
 var glassT={t:70,b:20};
 try{var savedG=JSON.parse(localStorage.getItem('glassTuning')||'null');if(savedG&&typeof savedG.t==='number')glassT=savedG;}catch(e){}
-function clampN(v,a,b){return Math.max(a,Math.min(b,v));}
 (function(){
   var a=document.getElementById('slAlpha'),b=document.getElementById('slBlur');
   if(a)a.addEventListener('input',function(){glassT.t=+this.value;applyGlassTuning();saveGlassTuning();dragPreview();});
@@ -1098,7 +430,6 @@ fetchSystemStatus();
 /* jfetch/unwrap/fdate/slugify/cnt/emptyCard/lerrEl/toastErr/frontBase/backBase/imgSrc
    已迁至 modules/site/data/{http,format}.js（S2），本模块执行前由全局过渡层暴露 */
 var N={posts:0,moments:0,music:0,albums:0};
-function updCounts(){cnt('n-posts',N.posts);cnt('n-moments',N.moments);cnt('n-music',N.music);cnt('n-album',N.albums);}
 (function(){if(typeof protoRenderMusic==='function'){var _p=window.protoRenderMusic;window.protoRenderMusic=function(rows){N.music=rows?rows.length:0;updCounts();_p(rows);};}})();
 
 /* ---------- 看板 hero + 待办计数(挂钩现有审核渲染) ---------- */
@@ -1298,83 +629,9 @@ var PRESET_LAYOUTS={
     {libk:'uptime'},{libk:'pendingAll'}
   ]}
 };
-function openPresetApply(){
-  var names=Object.keys(PRESET_LAYOUTS);
-  moOpen({title:'应用预设布局',msg:'将替换「网站」面板当前的模块组合（现有模块会被移除）：\n'+names.map(function(k,i){return (i+1)+'. '+PRESET_LAYOUTS[k].name;}).join('  ')+'',input:'',ok:'选择…'},function(){});
-  /* 用三个按钮的自定义流程：直接问名字 */
-  askText('应用预设布局','输入编号：1=监控优先  2=内容优先  3=极简','1/2/3').then(function(v){
-    var k=Object.keys(PRESET_LAYOUTS)[(parseInt(v)||0)-1];
-    if(!k)return;
-    applyPresetLayout(k);
-  });
-}
-function applyPresetLayout(k){
-  var def=PRESET_LAYOUTS[k];
-  if(!def)return;
-  askConfirm('应用「'+def.name+'」预设？网站面板现有模块将被移除替换。','应用').then(function(ok){
-    if(!ok)return;
-    for(var i=customModules.length-1;i>=0;i--){
-      if(customModules[i].panel==='site')customModules.splice(i,1);
-    }
-    def.mods.forEach(function(spec){
-      if(spec.libk){
-        var p=null;PRESETS.forEach(function(x){if(x.k===spec.libk)p=x;});
-        if(!p)return;
-        var m=p.make('site');
-        if(spec.w)m.w=spec.w;
-        m.libk=spec.libk;
-        customModules.push(m);
-      }else if(spec.tpl){
-        var t=spec.tpl;
-        customModules.push({id:'m'+Date.now()+Math.floor(Math.random()*999),mode:'tpl',type:t.type,name:t.name,icon:t.icon||'🔢',size:'half',w:'h',hc:'s',sec:'',enabled:true,panel:'site',refresh:0,data:t.data||{source:'manual',manual:0},unit:t.unit||'',rows:'',bind:'none',api:{url:'',path:''}});
-      }
-    });
-    saveModules();renderMyModules();
-    toast('「'+def.name+'」预设已应用 ✓');
-  });
-}
 
 /* ---------- 卡片长按拖拽排序(同分区内) ---------- */
 var DRAG=null;
-function startModDrag(el, mid, e0){
-  var m=null;customModules.forEach(function(x){if(x.id===mid)m=x;});
-  if(!m)return;
-  DRAG={el:el,mid:mid,m:m,offX:e0.clientX,offY:e0.clientY,baseX:0,baseY:0,moved:false};
-  var r=el.getBoundingClientRect();
-  DRAG.baseX=r.left;DRAG.baseY=r.top;
-  el.classList.add('dragging');
-  el.style.width=r.width+'px';el.style.height=r.height+'px';
-  el.style.position='fixed';el.style.left=r.left+'px';el.style.top=r.top+'px';
-  el.style.zIndex=300;el.style.margin='0';el.style.pointerEvents='none';
-  el.style.transition='none';el.style.boxShadow='0 22px 50px rgba(28,28,30,.35)';
-  document.body.appendChild(el);
-  moveDragTo(e0.clientX,e0.clientY);
-}
-function moveDragTo(x,y){
-  if(!DRAG)return;
-  DRAG.el.style.left=(x-DRAG.offX+ (DRAG.el._ox||0))+'px';
-  DRAG.el.style.top=(y-DRAG.offY)+'px';
-}
-function endModDrag(){
-  if(!DRAG)return;
-  var d=DRAG;DRAG=null;
-  d.el.classList.remove('dragging');
-  d.el.style.cssText='';
-  /* 按 DOM 顺序重排同分区内模块 */
-  var grid=d.el.parentElement;
-  if(grid){
-    var order=[...grid.querySelectorAll('[data-mid]')].map(function(x){return x.dataset.mid;});
-    customModules.sort(function(a,b){
-      if(a.panel!==b.panel)return 0;
-      var ia=order.indexOf(a.id),ib=order.indexOf(b.id);
-      if(ia<0&&ib<0)return 0;
-      if(ia<0)return 1;
-      if(ib<0)return -1;
-      return ia-ib;
-    });
-  }
-  saveModules();renderMyModules();
-}
 document.addEventListener('pointermove',function(e){
   if(!DRAG)return;
   e.preventDefault();
@@ -1500,21 +757,6 @@ try{NOTIF_SEEN=JSON.parse(localStorage.getItem('notifSeen')||'{}');}catch(e){}
 })();
 
 /* ---------- 统一确认/输入弹层 ---------- */
-function moOpen(o,cb){
-  var m=document.getElementById('mo-ask');if(!m){cb(o.input!=null?null:false);return;}
-  document.getElementById('moTitle').textContent=o.title||'确认操作';
-  document.getElementById('moMsg').textContent=o.msg||'';
-  var inp=document.getElementById('moInput');
-  inp.style.display=o.input!=null?'block':'none';
-  if(o.input!=null){inp.placeholder=o.input;inp.value=o.val||'';}
-  var ok=document.getElementById('moOk');
-  ok.textContent=o.ok||'确定';
-  ok.style.background=o.danger?'var(--red)':'var(--accent)';
-  m.style.display='flex';
-  function close(v){m.style.display='none';ok.onclick=null;document.getElementById('moCancel').onclick=null;cb(v);}
-  ok.onclick=function(){close(o.input!=null?inp.value.trim():true);};
-  document.getElementById('moCancel').onclick=function(){close(o.input!=null?null:false);};
-}
 
 /* ---------- 轮询治理:统一调度 + 页面不可见暂停 ---------- */
 var POLL_JOBS=[];
