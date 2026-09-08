@@ -8,6 +8,7 @@
  */
 import manifest, { siteState } from './manifest.js';
 import { setTokenProvider } from './data/http.js';
+import * as audit from './views/audit.js';
 import * as format from './data/format.js';
 import * as http from './data/http.js';
 import * as status from './views/status.js';
@@ -22,6 +23,7 @@ setTokenProvider(() => (typeof globalThis.authHeaders === 'function' ? globalThi
  * 过渡层登记表：全局函数名 → 模块内实现（脚本自动生成，勿手改名单）。
  */
 export const GLOBALS = {
+  ...audit.__exports__,
   ...format.__exports__,
   ...http.__exports__,
   ...status.__exports__,
