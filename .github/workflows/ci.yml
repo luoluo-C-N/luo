@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      run_contracts:
+        description: '运行后端契约测试（需后端源码与 venv，自托管 runner）'
+        type: boolean
+        default: false
+
+jobs:
+  client:
+    name: 客户端测试 / 构建 / 冒烟
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 单元测试
+        run: npm test
+
+      - name: 静态构建
+        run: npm run build
+
+      - name: 运行时冒烟
+        run: npm run smoke
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
+
+  guards:
+    name: 架构守卫
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # 新架构代码禁止硬编码后端地址，必须走 ctx.net
+      # TODO(迁移完成后): 去掉 continue-on-error，改为阻断
+      - name: 硬编码地址检查（src/core 与 src/modules）
+        continue-on-error: true
+        run: |
+          echo "检查新架构代码中的硬编码地址…"
+          if [ -d src/core ] || [ -d src/modules ]; then
+            if grep -rn "localhost:8000\|127\.0\.0\.1:8000" src/core src/modules 2>/dev/null; then
+              echo "::error::发现硬编码后端地址，请改用 ctx.net"
+              exit 1
+            fi
+          fi
+          echo "无硬编码地址"
+
+      # 模块样式必须带 .mod-{id} 前缀
+      - name: 模块样式前缀检查
+        continue-on-error: true
+        run: |
+          if [ -d src/modules ]; then
+            for f in $(find src/modules -name "style.css"); do
+              id=$(basename $(dirname "$f"))
+              if ! grep -q "\.mod-$id" "$f"; then
+                echo "::error::$f 缺少 .mod-$id 前缀"
+                exit 1
+              fi
+            done
+          fi
+          echo "样式前缀检查通过"
+
+  contracts:
+    name: 后端契约测试（手动触发）
+    needs: client
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_contracts }}
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 启动隔离后端并运行契约测试
+        env:
+          KIRAMEKU_BACKEND_SOURCE: ${{ vars.KIRAMEKU_BACKEND_SOURCE }}
+        run: |
+          echo "启动 8011 隔离 fixture…"
+          python scripts/test-backend.py &
+          # 等待服务就绪（对齐 tests/backend-contracts.py 的 12 秒重试窗口）
+          sleep 12
+          python tests/backend-contracts.py
+        shell: bash

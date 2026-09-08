@@ -19,3 +19,7 @@ tools/
 # 否则新协作者 clone 后拿不到任何背景（曾导致回执丢失与新会话脱上下文）。
 docs/standup/
 *.local.md
+
+# --- 灾备 ---
+# 含生产数据，不得入库
+backups/

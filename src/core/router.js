@@ -105,6 +105,17 @@ export function createRouter(options) {
         return { ok: false, id, error: `模块未注册：${id}` };
       }
 
+      // 0. 注册阶段就已损坏的模块：直接给降级卡片，不执行任何模块代码
+      if (registry.status(id) === 'broken') {
+        const reason = registry.errorOf(id) || '模块不可用';
+        const brokenBox = containerFor(id);
+        brokenBox.replaceChildren?.();
+        brokenBox.appendChild(degradeCard(id, reason));
+        bus?.emit('module:degraded', { id, message: reason });
+        current = { id, ctx: null, manifest };
+        return { ok: false, id, error: reason };
+      }
+
       // 1. 卸载上一个（失败不影响切换）
       if (current.id && current.id !== id) {
         await unmount(current.id);

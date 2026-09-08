@@ -160,6 +160,11 @@ export function createRegistry(deps = {}) {
       return modules.has(id) ? modules.get(id).status : 'missing';
     },
 
+    /** broken 模块的失败原因，用于降级卡片提示。 */
+    errorOf(id) {
+      return modules.get(id)?.error ?? null;
+    },
+
     /** 把已注册模块标记为 broken（mount 失败等运行时降级）。 */
     markBroken(id, error) {
       const record = modules.get(id);
