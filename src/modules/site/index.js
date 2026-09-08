@@ -9,12 +9,15 @@
 import manifest, { siteState } from './manifest.js';
 import { setTokenProvider } from './data/http.js';
 import * as audit from './views/audit.js';
+import * as auth from './views/auth.js';
 import * as content from './views/content.js';
 import * as crud from './views/crud.js';
 import * as dashboard from './views/dashboard.js';
+import * as editor from './views/editor.js';
 import * as format from './data/format.js';
 import * as http from './data/http.js';
 import * as music from './views/music.js';
+import * as profile from './views/profile.js';
 import * as status from './views/status.js';
 
 export { default as manifest } from './manifest.js';
@@ -28,12 +31,15 @@ setTokenProvider(() => (typeof globalThis.authHeaders === 'function' ? globalThi
  */
 export const GLOBALS = {
   ...audit.__exports__,
+  ...auth.__exports__,
   ...content.__exports__,
   ...crud.__exports__,
   ...dashboard.__exports__,
+  ...editor.__exports__,
   ...format.__exports__,
   ...http.__exports__,
   ...music.__exports__,
+  ...profile.__exports__,
   ...status.__exports__,
 };
 

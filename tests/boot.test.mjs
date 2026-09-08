@@ -27,7 +27,8 @@ test('legacy localhost requests use a server address saved after app startup', a
 });
 
 test('guest mode closes the login page without requiring authentication', () => {
-  const source = fs.readFileSync(new URL('../src/prototype.js', import.meta.url), 'utf8');
+  // skipLogin 已迁至 site 模块（S6），过渡层经全局暴露供内联 onclick 使用
+  const source = fs.readFileSync(new URL('../src/modules/site/views/auth.js', import.meta.url), 'utf8');
   const declaration = source.match(/function skipLogin\(\)\{[^}]*\}/)?.[0];
   assert.ok(declaration, 'skipLogin must be defined for the login-page button');
 

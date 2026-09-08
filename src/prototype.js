@@ -1262,100 +1262,8 @@ function delModule(id){
 /* ---- 真实账号体系(JWT) ---- */
 var AUTH={token:"",user:null};
 try{AUTH.token=localStorage.getItem("authToken")||"";AUTH.user=JSON.parse(localStorage.getItem("authUser")||"null");}catch(e){}
-function authHeaders(){return AUTH.token?{"Authorization":"Bearer "+AUTH.token}:{};}
-function skipLogin(){closeSub("pg-login");toast("当前为游客模式，管理操作需要登录");}
-function doLogin(){
-  var u=document.getElementById("loginUser").value.trim();
-  var p=document.getElementById("loginPass").value;
-  if(!u||!p){loginErr("请输入账号和密码");return;}
-  fetch("http://localhost:8000/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username:u,password:p})})
-    .then(function(r){if(!r.ok)throw new Error("unauthorized");return r.json();})
-    .then(function(j){
-      if(j.code!==0)throw new Error(j.message||"登录失败");
-      AUTH.token=j.data.accessToken;AUTH.user=j.data;
-      try{localStorage.setItem("authToken",AUTH.token);localStorage.setItem("authUser",JSON.stringify({nickname:j.data.nickname,username:j.data.username,avatar:j.data.avatar}));}catch(e){}
-      var el=document.getElementById("pg-login");el.style.opacity="0";el.style.transform="scale(.98)";
-      setTimeout(function(){closeSub("pg-login");el.style.opacity="";el.style.transform="";},260);
-      loginErr("");
-      toast("欢迎回来,"+(j.data.nickname||u));
-      if(typeof refreshAudit==="function")refreshAudit();
-    })
-    .catch(function(e){loginErr(e.message==="unauthorized"?"账号或密码错误":"后端未启动,无法登录");});
-}
-function setAuthMode(m){
-  var l=document.getElementById('am-login'),r=document.getElementById('am-reg');
-  var fl=document.getElementById('f-login'),fr=document.getElementById('f-reg');
-  if(!l||!r)return;
-  l.classList.toggle('on',m==='login');
-  r.classList.toggle('on',m==='register');
-  fl.style.display=m==='login'?'':'none';
-  fr.style.display=m==='register'?'':'none';
-  loginErr('');
-}
-function doRegister(){
-  var u=document.getElementById('regUser').value.trim();
-  var n=document.getElementById('regNick').value.trim();
-  var p=document.getElementById('regPass').value;
-  if(!u||!p){loginErr('账号和密码不能为空');return;}
-  fetch("http://localhost:8000/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({username:u,password:p,nickname:n})})
-    .then(function(r){return r.json().then(function(j){return {status:r.status,j:j};});})
-    .then(function(res){
-      if(res.status!==200||res.j.code!==0){loginErr((res.j&&(res.j.detail||res.j.message))||'注册失败');return;}
-      AUTH.token=res.j.data.accessToken;
-      AUTH.user={username:res.j.data.username,nickname:res.j.data.nickname};
-      try{localStorage.setItem("authToken",AUTH.token);localStorage.setItem("authUser",JSON.stringify({nickname:res.j.data.nickname,username:res.j.data.username}));}catch(e){}
-      var el=document.getElementById("pg-login");
-      el.style.opacity="0";el.style.transform="scale(.98)";
-      setTimeout(function(){closeSub("pg-login");el.style.opacity="";el.style.transform="";},260);
-      loginErr("");
-      toast("注册成功，欢迎 "+(res.j.data.nickname||u)+" 🎉");
-      if(typeof refreshAudit==="function")refreshAudit();
-      draftClear&&draftClear();
-    })
-    .catch(function(){loginErr('后端未启动，无法注册');});
-}
-function oauthTry(kind){
-  var names={qq:'QQ',wechat:'微信'};
-  fetch('http://localhost:8000/api/auth/'+kind+'/login')
-    .then(function(r){return r.json().then(function(j){return {status:r.status,j:j};});})
-    .then(function(res){
-      if(res.status===501){toast('⚠️ '+names[kind]+'登录需站长在服务端配置开放平台后开放');}
-      else if(res.status>=300&&res.status<400||res.headers){toast('正在跳转'+names[kind]+'…');}
-      else toast(names[kind]+'登录暂不可用');
-    })
-    .catch(function(){toast('无法连接后端');});
-}
-function loginErr(m){
-  var e=document.getElementById("loginErr");
-  if(!e)return;
-  e.textContent=m;
-  if(m){e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');}
-}
 /* ---- GitHub OAuth 登录 ---- */
 var GH_BACK='http://localhost:8000';
-function githubLogin(){
-  toast('正在连接 GitHub…');
-  fetch(GH_BACK+'/api/auth/github/login',{redirect:'manual'})
-    .then(function(r){
-      if(r.status===500){toast('⚠️ 后端未配置 GitHub：请在 Kirameku-backend/.env 填 GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET 后重启');return;}
-      if(r.status===404){toast('后端未部署 GitHub 登录接口');return;}
-      location.href=GH_BACK+'/api/auth/github/login';
-    })
-    .catch(function(){toast('无法连接后端 :8000');});
-}
-function ghApplyUser(u){
-  try{localStorage.setItem('ghUser',JSON.stringify(u));}catch(e){}
-  var b=document.getElementById('ghBtnTxt');
-  if(b)b.textContent='GitHub · '+u.login;
-  document.querySelectorAll('#pg-account .menu-row').forEach(function(row){
-    if(row.textContent.indexOf('GitHub 绑定')>-1){
-      var st=row.querySelector('span:last-child');
-      if(st){st.textContent=u.login;st.style.color='var(--green)';}
-    }
-  });
-}
 (function(){
   var q=new URLSearchParams(location.search);
   if(q.get('auth_callback')==='1'&&q.get('token')){
@@ -1372,16 +1280,6 @@ function ghApplyUser(u){
     if(saved){try{ghApplyUser(JSON.parse(saved));}catch(e){}}
   }
 })();
-function logout(){
-  AUTH.token="";AUTH.user=null;
-  try{localStorage.removeItem("authToken");localStorage.removeItem("authUser");}catch(e){}
-  closeSub("pg-account");openLogin();toast("已退出登录");
-}
-function openLogin(){
-  var el=document.getElementById("pg-login");
-  el.style.opacity="";el.style.transform="";
-  el.classList.add("show");
-}
 
 /* ============ 模块大小切换:长按浮现 ⤢,点它紧凑/展开互切(FLIP 平滑变形) ============ */
 document.addEventListener('pointerdown',function(e){
@@ -1767,75 +1665,6 @@ var PEND={cmt:0,msg:0};
 /* ---------- 文章 ---------- */
 var POSTS=[],POST_EDIT=null,PQ='';
 var PG={posts:1,moments:1},PAGE_SIZE=50,POSTS_MORE=false,MOMENTS_MORE=false;
-function openPostEditor(id){
-  jfetch(API_BASE+'/api/posts/detail/'+id).then(function(p){
-    POST_EDIT=p;
-    var t=document.getElementById('edPostTitle'),b=document.getElementById('edPostBody');
-    if(t)t.value=p.title||'';if(b)b.value=p.content||'';
-    postMetaUpd();
-    var st=document.querySelector('#pg-editor .sub-title');if(st)st.textContent='编辑文章';
-    openSub('pg-editor');
-  }).catch(toastErr);
-}
-function postMetaUpd(){
-  var b=document.getElementById('edPostBody'),m=document.getElementById('edPostMeta');
-  if(!b||!m)return;var n=b.value.length;
-  m.textContent=n+' 字 · 预计阅读 '+Math.max(1,Math.ceil(n/400))+' 分钟 · 存到 Kirameku 数据库';
-}
-function openEditor(){
-  POST_EDIT=null;
-  var t=document.getElementById('edPostTitle'),b=document.getElementById('edPostBody');
-  if(t)t.value='';if(b)b.value='';postMetaUpd();
-  var st=document.querySelector('#pg-editor .sub-title');if(st)st.textContent='写文章';
-  openSub('pg-editor');
-  draftHook();
-  var raw=null;try{raw=localStorage.getItem(DRAFT_KEY);}catch(e){}
-  if(raw){
-    try{
-      var d=JSON.parse(raw);
-      if(d&&(d.title||d.body)){
-        askConfirm('发现未完成的草稿「'+(d.title||'无标题')+'」，恢复继续写？','恢复').then(function(ok){
-          if(!ok){draftClear();return;}
-          var t2=document.getElementById('edPostTitle'),b2=document.getElementById('edPostBody');
-          if(t2)t2.value=d.title||'';if(b2)b2.value=d.body||'';
-          postMetaUpd();toast('草稿已恢复 ✓');
-        });
-      }
-    }catch(e){}
-  }
-}
-function buildPostPayload(status){
-  var t=document.getElementById('edPostTitle'),b=document.getElementById('edPostBody');
-  var title=t.value.trim(),content=b.value;
-  if(!title){toast('请先写标题');return null;}
-  var p=POST_EDIT||{};
-  var tagsInp=document.getElementById('edPostTags');
-  var tags=tagsInp?tagsInp.value.split(/[,，]/).map(function(x){return x.trim();}).filter(Boolean)
-                 :(p.tags||[]).map(function(x){return String(x).trim();});
-  tags=[...new Set(tags)];
-  var covInp=document.getElementById('edPostCover');
-  var cover=covInp?(covInp.value.trim()||p.cover||''):(p.cover||'');
-  var pl={title:title,slug:p.slug||slugify(title),description:p.description||content.slice(0,80),
-    content:content,cover:cover,tags:tags,status:status!=null?status:(p.status||'draft'),
-    is_pinned:!!p.is_pinned,word_count:content.length,reading_time:Math.max(1,Math.ceil(content.length/400))};
-  var catSel=document.getElementById('edPostCat');
-  if(catSel&&catSel.value!=='')pl.category_id=+catSel.value;
-  return pl;
-}
-function sendPost(pl,msg){
-  var done=function(){toast(msg);closeSub('pg-editor');draftClear();loadPosts();loadDash();};
-  if(POST_EDIT&&POST_EDIT.id){jfetch(API_BASE+'/api/posts/'+POST_EDIT.id,{method:'PUT',body:JSON.stringify(pl)}).then(done).catch(toastErr);}
-  else{jfetch(API_BASE+'/api/posts',{method:'POST',body:JSON.stringify(pl)}).then(done).catch(toastErr);}
-}
-function savePostDraft(){
-  var pl=buildPostPayload(null);if(!pl)return;
-  if(POST_EDIT&&POST_EDIT.status==='published')pl.status='published';
-  sendPost(pl,'草稿已保存 ✓');
-}
-function publishPost(){
-  var pl=buildPostPayload('published');if(!pl)return;
-  sendPost(pl,'已发布 · 网站即时可见 ✓');
-}
 
 /* ---------- 说说 ---------- */
 
@@ -1959,16 +1788,6 @@ window.auditAct=function(kind,id,status,card){
 
 /* ---------- 文章编辑器:分类/标签/封面 ---------- */
 var CATS=[];
-function loadCats(){
-  return jfetch(API_BASE+'/api/categories').then(function(l){CATS=unwrap(l)||[];fillCatSelect();}).catch(function(){});
-}
-function fillCatSelect(keepName){
-  var sel=document.getElementById('edPostCat');if(!sel)return;
-  var cur=keepName||sel.dataset.cur||'';
-  sel.innerHTML='<option value="">分类(不改变/无)</option>'+CATS.map(function(c){
-    return '<option value="'+c.id+'"'+(cur&&c.name===cur?' selected':'')+'>'+esc(c.name)+'</option>';
-  }).join('');
-}
 /* 直接包装 openPostEditor/openEditor：在原实现后填充分类/标签/封面 */
 (function(){
   var _openPostEditor=window.openPostEditor;
@@ -1999,113 +1818,14 @@ function fillCatSelect(keepName){
 })();
 
 /* ---------- 编辑器:预览/封面传图/选图/防丢稿 ---------- */
-function edViewMode(m){
-  var ed=document.getElementById('et-edit'),pv=document.getElementById('et-prev');
-  var ta=document.getElementById('edPostBody'),box=document.getElementById('edPreview');
-  if(!ed||!pv||!ta||!box)return;
-  if(m==='prev'){
-    ed.classList.remove('on');pv.classList.add('on');
-    ta.style.display='none';box.style.display='block';
-    var md=window.marked?marked.parse(ta.value||''):('<pre>'+esc(ta.value||'')+'</pre>');
-    box.innerHTML=md;
-  }else{
-    pv.classList.remove('on');ed.classList.add('on');
-    box.style.display='none';ta.style.display='';
-  }
-}
-function uploadCover(input){
-  var f=input.files&&input.files[0];if(!f)return;
-  toast('封面上传中…');
-  var fd=new FormData();fd.append('file',f);
-  var up=function(ep){return fetch(API_BASE+ep,{method:'POST',headers:authHeaders(),body:fd}).then(function(r){return r.json();});};
-  up('/api/upload/image').catch(function(){return up('/api/upload/image-local');}).then(function(j){
-    if(j&&j.url){document.getElementById('edPostCover').value=j.url;toast('封面已就绪 ✓');}
-    else throw new Error((j&&(j.detail||j.message))||'上传失败');
-  }).catch(function(e){toast('⚠️ '+(e.message||'封面上传失败'));});
-  input.value='';
-}
 /* 图片插入:工具栏 🖼️ 改为从相册选 */
-function imgInsertOpen(){
-  openSub('pg-imgpick');
-  var body=document.getElementById('imgPickBody');
-  body.innerHTML='<div class="card" style="padding:12px;font-size:12.5px;color:var(--ink-3)">加载相册…</div>';
-  jfetch(API_BASE+'/api/albums').then(function(l){
-    var albums=unwrap(l)||[];
-    if(!albums.length){body.innerHTML=emptyCard('还没有相册 · 可点右上 🔗 手输网址');return;}
-    body.innerHTML='<div style="font-size:12px;color:var(--ink-2);margin-bottom:8px">点相册展开照片，点照片插入正文</div>'+albums.map(function(a){
-      return '<div class="card" style="padding:12px 14px;margin-bottom:10px;cursor:pointer" onclick="imgPickAlbum('+a.id+',\''+escAttr(a.title)+'\')">'+
-        '<div style="font-size:14.5px;font-weight:600">'+esc(a.title)+'<span class="chip chip-local" style="margin-left:8px">'+(a.photo_count||0)+' 张</span></div></div>';
-    }).join('');
-  }).catch(function(e){body.innerHTML=emptyCard('⚠️ '+e.message);});
-}
-function imgPickAlbum(id,title){
-  var body=document.getElementById('imgPickBody');
-  body.innerHTML='<div class="album-back" onclick="imgInsertOpen()">‹ 返回相册列表</div><div class="card" style="padding:12px;font-size:12.5px;color:var(--ink-3)">加载中…</div>';
-  jfetch(API_BASE+'/api/albums/'+id+'/photos').then(function(l){
-    var arr=unwrap(l)||[];
-    body.innerHTML='<div class="album-back" onclick="imgInsertOpen()">‹ 返回相册列表</div>'+
-      '<div class="card" style="padding:12px"><div style="font-size:14.5px;font-weight:700;margin-bottom:10px">'+esc(title)+'</div>'+
-      '<div class="gallery">'+arr.map(function(ph){
-        return '<div class="gcell photo-cell" onclick="imgPickUse(\''+ph.url.replace(/'/g,"")+'\')">'+
-          (imgSrc(ph.url)?'<img src="'+escAttr(imgSrc(ph.url))+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">':'🖼️')+'</div>';
-      }).join('')+(arr.length?'':'<div style="font-size:12px;color:var(--ink-3);padding:8px">相册为空</div>')+'</div></div>';
-  }).catch(function(e){body.innerHTML=emptyCard('⚠️ '+e.message);});
-}
-function imgPickUse(url){
-  closeSub('pg-imgpick');
-  edViewMode('edit');
-  var ta=document.getElementById('edPostBody');if(!ta)return;
-  var sc=ta.selectionStart===null?ta.value.length:ta.selectionStart;
-  var snip='\n!['+(sc>=0?'':('')+escAttr(url.split('/').pop()))+']('+url+')\n';
-  var v=ta.value;
-  ta.value=v.slice(0,sc)+snip+v.slice(sc);
-  ta.selectionStart=ta.selectionEnd=sc+snip.length;
-  ta.focus();postMetaUpd();
-  toast('图片已插入正文 ✓');
-}
-function imgPickManual(){
-  askText('插入图片网址','在光标处插入 Markdown 图片','https://… 或 /images/xx.webp').then(function(u){
-    if(!u)return;
-    closeSub('pg-imgpick');
-    edViewMode('edit');
-    var ta=document.getElementById('edPostBody');if(!ta)return;
-    var sc=ta.selectionStart===null?ta.value.length:ta.selectionStart;
-    var snip='\n![]('+u.trim()+')\n';
-    var v=ta.value;
-    ta.value=v.slice(0,sc)+snip+v.slice(sc);
-    ta.selectionStart=ta.selectionEnd=sc+snip.length;
-    ta.focus();postMetaUpd();
-    toast('图片已插入正文 ✓');
-  });
-}
 /* 工具栏 🖼️ 按钮改调选图 */
 rep_open_imgpick=function(){};
 /* ---------- 草稿筛选 ---------- */
 var PF='all';
-function setPostFilter(f){
-  PF=f||'all';
-  document.querySelectorAll('[data-f]').forEach(function(x){x.classList.toggle('on',x.dataset.f===PF);});
-  renderPosts();
-}
 
 /* ---------- 防丢稿自动暂存 ---------- */
 var DRAFT_KEY='postDraft',_draftT=null;
-function draftSave(){
-  if(POST_EDIT)return; // 编辑已有文章不暂存（直接保存即可）
-  var t=document.getElementById('edPostTitle'),b=document.getElementById('edPostBody');
-  if(!t||!b)return;
-  if(!t.value.trim()&&!b.value.trim()){localStorage.removeItem(DRAFT_KEY);return;}
-  try{localStorage.setItem(DRAFT_KEY,JSON.stringify({title:t.value,body:b.value,ts:Date.now()}));}catch(e){}
-}
-function draftHook(){
-  var t=document.getElementById('edPostTitle'),b=document.getElementById('edPostBody');
-  if(!t||!b)return;
-  ['input','change'].forEach(function(ev){
-    t.addEventListener(ev,function(){clearTimeout(_draftT);_draftT=setTimeout(draftSave,3000);});
-    b.addEventListener(ev,function(){clearTimeout(_draftT);_draftT=setTimeout(draftSave,3000);});
-  });
-}
-function draftClear(){try{localStorage.removeItem(DRAFT_KEY);}catch(e){}}
 (function(){
   document.addEventListener('click',function(e){
     if(e.target.closest&&(e.target.closest('.btn-draft')||e.target.closest('.btn-pub')))draftClear();
@@ -2113,144 +1833,13 @@ function draftClear(){try{localStorage.removeItem(DRAFT_KEY);}catch(e){}}
 })();
 
 /* ---------- Markdown 工具栏 ---------- */
-function mdWrap(open,close){
-  var ta=document.getElementById('edPostBody');if(!ta)return;
-  var sc=ta.selectionStart===null?ta.value.length:ta.selectionStart;
-  var ec=ta.selectionEnd===null?sc:ta.selectionEnd;
-  var v=ta.value;
-  ta.value=v.slice(0,sc)+open+v.slice(sc,ec)+close+v.slice(ec);
-  var pos=sc+open.length+(ec-sc);
-  ta.selectionStart=ta.selectionEnd=pos;
-  ta.focus();postMetaUpd();
-}
-function mdLine(pre){
-  var ta=document.getElementById('edPostBody');if(!ta)return;
-  var s=ta.selectionStart===null?0:ta.selectionStart;
-  var v=ta.value;
-  var ls=v.lastIndexOf('\n',Math.max(0,s-1))+1;
-  ta.value=v.slice(0,ls)+pre+v.slice(ls);
-  ta.selectionStart=ta.selectionEnd=s+pre.length;
-  ta.focus();postMetaUpd();
-}
 
 /* ---------- 相册设为封面 ---------- */
-function setCover(pid){
-  if(!CUR_ALBUM)return;
-  var ph=(CUR_PHOTOS||[]).find(function(x){return x.id===pid;});
-  if(!ph)return;
-  jfetch(API_BASE+'/api/albums/'+CUR_ALBUM.id,{method:'PUT',body:JSON.stringify({cover:ph.url})})
-    .then(function(){toast('已设为相册封面');CUR_ALBUM.cover=ph.url;loadAlbums();})
-    .catch(toastErr);
-}
 
 /* ---------- 账号资料编辑 ---------- */
-function meCardPaint(){
-  var u=AUTH.user||{};
-  var av=document.getElementById('meAvatar');
-  if(av){
-    var url=u.avatar||'';
-    if(url){
-      av.innerHTML='<img src="'+escAttr(imgSrc(url))+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" onerror="this.remove()">';
-    }else av.textContent=(u.nickname||'洛').slice(0,1);
-  }
-  var nk=document.getElementById('meNick');
-  if(nk)nk.innerHTML=esc(u.nickname||'洛洛')+' <span style="font-size:12px;color:var(--accent);font-weight:600">编辑 ›</span>';
-  var bio=document.getElementById('meBio');
-  if(bio)bio.textContent=u.bio||u.description||'Kirameku · 站点管理员';
-}
-function pfAvatarPaint(url){
-  var el=document.getElementById('pfAvatar');
-  if(!el)return;
-  if(url)el.innerHTML='<img src="'+escAttr(imgSrc(url))+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">';
-  else el.textContent=((AUTH.user&&AUTH.user.nickname)||'洛').slice(0,1);
-}
 var PF_AV='';
-function uploadAvatar(input){
-  var f=input.files&&input.files[0];if(!f)return;
-  toast('头像上传中…');
-  var fd=new FormData();fd.append('file',f);
-  var up=function(ep){return fetch(API_BASE+ep,{method:'POST',headers:authHeaders(),body:fd}).then(function(r){return r.json();});};
-  up('/api/upload/image').catch(function(){return up('/api/upload/image-local');}).then(function(j){
-    if(!j||!j.url)throw new Error((j&&(j.detail||j.message))||'上传失败');
-    PF_AV=j.url;
-    pfAvatarPaint(j.url);
-    toast('头像已就绪，保存后生效 ✓');
-  }).catch(function(e){toast('⚠️ '+(e.message||'头像上传失败'));});
-  input.value='';
-}
-function openProfile(){
-  var fill=function(u){
-    u=u||{};
-    var n=document.getElementById('pfNick'),e=document.getElementById('pfEmail'),b=document.getElementById('pfBio');
-    if(n)n.value=u.nickname||'';
-    if(e)e.value=u.email||'';
-    if(b)b.value=u.description||u.bio||'';
-    PF_AV=u.avatar||'';
-    pfAvatarPaint(u.avatar);
-  };
-  if(AUTH.token){
-    jfetch(API_BASE+'/api/auth/me',{headers:authHeaders()}).then(function(r){fill(unwrap(r));}).catch(function(){fill(AUTH.user);});
-  }else fill(AUTH.user);
-  openSub('pg-profile');
-}
-function saveProfile(){
-  var pl={nickname:document.getElementById('pfNick').value.trim(),
-          email:document.getElementById('pfEmail').value.trim(),
-          description:document.getElementById('pfBio').value.trim()};
-  if(PF_AV)pl.avatar=PF_AV;
-  if(!pl.nickname){toast('昵称不能为空');return;}
-  jfetch(API_BASE+'/api/auth/me',{method:'PUT',body:JSON.stringify(pl)})
-    .then(function(){
-      try{
-        var u=JSON.parse(localStorage.getItem('authUser')||'{}');
-        u.nickname=pl.nickname;if(pl.avatar)u.avatar=pl.avatar;u.bio=pl.description;
-        localStorage.setItem('authUser',JSON.stringify(u));
-      }catch(e){}
-      AUTH.user=Object.assign(AUTH.user||{},pl);
-      meCardPaint();
-      toast('资料已保存 ✓');closeSub('pg-profile');
-    }).catch(toastErr);
-}
 
 /* ---------- 全局搜索 ---------- */
-function openSearch(){
-  openSub('pg-search');
-  var g=document.getElementById('gq');
-  if(g){g.value='';g.focus();}
-  var out=document.getElementById('gSearchOut');
-  if(out)out.innerHTML='<div class="card" style="padding:12px;font-size:12.5px;color:var(--ink-3)">输入关键词回车 · 并行搜索文章 / 说说 / 相册</div>';
-}
-function globalSearch(){
-  var kw=(document.getElementById('gq').value||'').trim();
-  var out=document.getElementById('gSearchOut');
-  if(!kw){out.innerHTML=emptyCard('输入关键词开始搜索');return;}
-  out.innerHTML='<div class="card" style="padding:12px;font-size:12.5px;color:var(--ink-3)">搜索中…</div>';
-  var kwl=kw.toLowerCase();
-  Promise.all([
-    jfetch(API_BASE+'/api/posts?size=200').then(unwrap).catch(function(){return [];}),
-    jfetch(API_BASE+'/api/chatters/admin?size=200',{headers:authHeaders()}).then(unwrap).catch(function(){return [];}),
-    jfetch(API_BASE+'/api/albums').then(unwrap).catch(function(){return [];})
-  ]).then(function(rs){
-    var posts=(rs[0]||[]).filter(function(p){return String(p.title).toLowerCase().indexOf(kwl)>-1;});
-    var moms=(rs[1]||[]).filter(function(m){return String(m.content).toLowerCase().indexOf(kwl)>-1;});
-    var als=(rs[2]||[]).filter(function(a){return (String(a.title)+' '+String(a.description||'')).toLowerCase().indexOf(kwl)>-1;});
-    var html='';
-    function group(title,rows,render){
-      if(!rows.length)return '';
-      return '<div class="section-title" style="margin:12px 0 6px">'+title+' · '+rows.length+'</div>'+rows.map(render).join('');
-    }
-    html+=group('文章',posts.slice(0,10),function(p){
-      return '<div class="card" style="padding:10px 14px;cursor:pointer" onclick="closeSub(\'pg-search\');openPostEditor('+p.id+')"><div style="font-size:13.5px;font-weight:600">'+esc(p.title)+'</div><div style="font-size:11.5px;color:var(--ink-3)">'+(p.status==='published'?'已发布':'草稿')+' · 👁 '+(p.views||0)+'</div></div>';
-    });
-    html+=group('说说',moms.slice(0,10),function(m){
-      return '<div class="card" style="padding:10px 14px;cursor:pointer" onclick="closeSub(\'pg-search\');jumpTab(\'scr-content\');segTo(\'content\',\'moments\')"><div style="font-size:13px">'+esc(String(m.content).slice(0,60))+'</div><div style="font-size:11.5px;color:var(--ink-3)">'+fdate(m.created_at)+'</div></div>';
-    });
-    html+=group('相册',als.slice(0,10),function(a){
-      return '<div class="card" style="padding:10px 14px;cursor:pointer" onclick="closeSub(\'pg-search\');jumpTab(\'scr-content\');segTo(\'content\',\'album\');openAlbum('+a.id+')"><div style="font-size:13.5px;font-weight:600">'+esc(a.title)+'</div><div style="font-size:11.5px;color:var(--ink-3)">'+(a.photo_count||0)+' 张</div></div>';
-    });
-    out.innerHTML=html||emptyCard('没有找到「'+esc(kw)+'」相关内容');
-  }).catch(function(e){out.innerHTML=emptyCard('⚠️ '+e.message);});
-}
 
 /* ---------- 预设布局(三套一键) ---------- */
 var PRESET_LAYOUTS={
