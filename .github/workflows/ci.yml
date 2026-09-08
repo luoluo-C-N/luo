@@ -50,14 +50,15 @@ jobs:
       - uses: actions/checkout@v4
 
       # 新架构代码禁止硬编码后端地址，必须走 ctx.net
+      # 例外：modules/site/data/http.js 是全项目唯一默认地址字面量（单一事实源）
       # TODO(迁移完成后): 去掉 continue-on-error，改为阻断
       - name: 硬编码地址检查（src/core 与 src/modules）
         continue-on-error: true
         run: |
           echo "检查新架构代码中的硬编码地址…"
           if [ -d src/core ] || [ -d src/modules ]; then
-            if grep -rn "localhost:8000\|127\.0\.0\.1:8000" src/core src/modules 2>/dev/null; then
-              echo "::error::发现硬编码后端地址，请改用 ctx.net"
+            if grep -rn "localhost:8000\|127\.0\.0\.1:8000" src/core src/modules 2>/dev/null | grep -v "src/modules/site/data/http.js"; then
+              echo "::error::发现硬编码后端地址，请改用 ctx.net（唯一豁免：site/data/http.js）"
               exit 1
             fi
           fi

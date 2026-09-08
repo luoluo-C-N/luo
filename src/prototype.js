@@ -770,8 +770,7 @@ try{customModules=JSON.parse(localStorage.getItem('customModules')||'[]');}catch
 customModules.forEach(function(m){if(!m.panel)m.panel='site';});
 function saveModules(){try{localStorage.setItem('customModules',JSON.stringify(customModules));}catch(e){toast('存储空间不足');}}
 var modTimers={};
-function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function escAttr(s){return esc(s);}
+/* esc/escAttr 已迁至 modules/site/data/format.js（S2），经全局过渡层提供 */
 function fmtVal(v){return (typeof v==='number')?v.toLocaleString('zh-CN'):v;}
 var REAL_CACHE={};
 function resolveData(m){
@@ -1907,7 +1906,7 @@ setTimeout(function(){try{applyAllNames();}catch(e){}},800);
 setInterval(function(){try{applyAllNames();}catch(e){}},2000);
 
 /* ============ 真实数据接入:Kirameku 后端(带回退,失败保留演示值) ============ */
-var API_BASE='http://localhost:8000';
+var API_BASE=window.backBase();
 function applySystemStatus(d){
   REAL_CACHE.uptimeDays=d.uptimeDays;
   REAL_CACHE.dbSizeMb=d.dbSizeMb;
@@ -1941,33 +1940,8 @@ fetchSystemStatus();
 ;
 
 /* ============ App v2 · 内容 CRUD 层(接 Kirameku 后端真实数据) ============ */
-function jfetch(url,opts){
-  opts=opts||{};
-  if(!(opts.body instanceof FormData))opts.headers=Object.assign({'Content-Type':'application/json'},authHeaders(),opts.headers||{});
-  else opts.headers=Object.assign({},authHeaders(),opts.headers||{});
-  return fetch(url,opts).then(function(r){
-    return r.text().then(function(t){
-      var j=null;try{j=t?JSON.parse(t):null;}catch(e){}
-      if(!r.ok){
-        var m=(j&&(j.detail||j.message))||('HTTP '+r.status);
-        if(r.status===401)m='未登录或登录已过期，请先登录';
-        if(r.status===403&&/authenticated|权限/.test(m))m='需要管理员登录后才能操作';
-        var err=new Error(m);err.status=r.status;throw err;
-      }
-      return j;
-    });
-  });
-}
-function unwrap(j){if(j&&typeof j==='object'&&('code' in j)){if(j.code!==0)throw new Error(j.message||'请求失败');return j.data;}return j;}
-function fdate(v){try{var d=new Date(v);if(isNaN(d))return String(v||'').replace('T',' ').slice(5,16);function p(n){return(n<10?'0':'')+n;}return p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}catch(e){return String(v||'')}}
-function slugify(name){var x=String(name||'').trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-_\u4e00-\u9fa5]/g,'');if(!x||/^[\u4e00-\u9fa5]+$/.test(x))x='item-'+Date.now().toString(36);return x;}
-function cnt(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
-function emptyCard(t){return '<div class="card" style="padding:14px;font-size:12.5px;color:var(--ink-3);text-align:center">'+t+'</div>';}
-function lerrEl(h,e){h.innerHTML=emptyCard('⚠️ '+(e&&e.message||'加载失败'));}
-function toastErr(e){toast('⚠️ '+((e&&e.message)||'操作失败'));}
-function frontBase(){try{var v=localStorage.getItem('pocket.front');if(v)return v.replace(/\/$/,'');}catch(e){}return 'http://localhost:3000';}
-function backBase(){try{var v=localStorage.getItem('pocket.server');if(v)return v.replace(/\/$/,'');}catch(e){}return 'http://localhost:8000';}
-function imgSrc(u){u=String(u||'');if(!u)return '';if(u.indexOf('http')===0)return u;if(u.indexOf('/images')===0)return frontBase()+u;return backBase()+u;}
+/* jfetch/unwrap/fdate/slugify/cnt/emptyCard/lerrEl/toastErr/frontBase/backBase/imgSrc
+   已迁至 modules/site/data/{http,format}.js（S2），本模块执行前由全局过渡层暴露 */
 var N={posts:0,moments:0,music:0,albums:0};
 function updCounts(){cnt('n-posts',N.posts);cnt('n-moments',N.moments);cnt('n-music',N.music);cnt('n-album',N.albums);}
 (function(){if(typeof protoRenderMusic==='function'){var _p=window.protoRenderMusic;window.protoRenderMusic=function(rows){N.music=rows?rows.length:0;updCounts();_p(rows);};}})();

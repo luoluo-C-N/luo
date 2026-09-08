@@ -28,7 +28,16 @@ test('restore 幂等：重复调用不抛错', () => {
   assert.doesNotThrow(restore);
 });
 
-test('S1 阶段过渡层为空（函数尚未迁入，禁止提前暴露空实现）', () => {
-  assert.deepEqual(Object.keys(GLOBALS), [],
-    'GLOBALS 应随 S2-S7 迁移逐步填充；S1 必须为空');
+test('S2 过渡层已接管 data 层 13 个全局函数', () => {
+  assert.deepEqual(
+    Object.keys(GLOBALS).sort(),
+    ['backBase', 'cnt', 'emptyCard', 'esc', 'escAttr', 'fdate', 'frontBase',
+      'imgSrc', 'jfetch', 'lerrEl', 'slugify', 'toastErr', 'unwrap'].sort()
+  );
+});
+
+test('过渡层暴露的函数与模块导出同一实例（改一处即全局生效）', async () => {
+  const { default: site } = await import('../../../src/modules/site/index.js');
+  const { jfetch } = await import('../../../src/modules/site/data/http.js');
+  assert.equal(site.GLOBALS.jfetch, jfetch);
 });

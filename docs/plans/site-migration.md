@@ -145,7 +145,7 @@ modules/site/
 | 步 | 内容 | 为什么排这里 |
 |---|---|---|
 | **S1** | 建骨架：manifest/index/style + 空视图占位 + **全局过渡层** + 从 `prototype.css` 拆 `style.css`（令牌进 `src/ui/tokens.css`） | 先立容器，后续每步只搬函数 |
-| **S2** | `data/` 层：http.js / format.js / sources.js —— **21 处硬编码地址在此归零** | 纯函数多、无 DOM，风险最低；且后续所有视图依赖它 |
+| **S2** | `data/` 层：http.js / format.js —— **运行时切换在此完成**（index.html 增加 module 入口、prototype.js 删除原定义、全局过渡层生效） | 纯函数多、无 DOM，风险最低。<br>**执行偏差（2026-09-08）**：sources.js（CRUD_DEFS/FIELDS）推迟至 S5——与 content 视图强耦合，单独前移只多一层过渡暴露无收益 |
 | **S3** | `views/status.js`（最小独立页，验证迁移模式） | 状态页依赖少、可独立验证，是理想的"试点" |
 | **S4** | `views/audit.js`（三类审核 + 解除猴子补丁） | 功能设计要求 emit `site:pending-changed`，从审核开始建立事件习惯 |
 | **S5** | `views/dashboard.js` + `views/content.js` + `views/music.js`（最大体量） | 依赖 S2/S3/S4 已稳 |
@@ -180,7 +180,7 @@ modules/site/
 | 1 | 内联 onclick 断链 → 按钮全死 | index.html 154 处、约 40 个全局函数 | §4 策略 A 过渡层；S1 第一步就建好 |
 | 2 | 按行号切块切错（区块交错） | 审核在 881（模块段内）、登录在 1424 | §3 按函数映射；每函数 grep 定位 |
 | 3 | 新旧两份函数并存，行为分叉 | 单体迁移最常见事故 | 每步 DoD："原定义已从 prototype.js 删除" |
-| 4 | 21 处硬编码地址残留 | `grep -c` = 21 | S2 全部收口 http.js；CI 守卫已设（当前 warn 级） |
+| 4 | 硬编码地址残留 | 实勘 21 处；S2 后 src/ 计 20（prototype.js 18 随视图迁移递减，http.js 1 处为唯一豁免默认值，core 1 处） | 逐视图迁移收口；CI 守卫已设（warn 级，迁移完成后转阻断） |
 | 5 | 全局可变状态（`POSTS`/`CRUD_DATA`/`PEND`/`N`/`SVC_CTRL`）跨函数共享 | 68 处裸 localStorage、28 处 window | **迁移期保持单例不动设计**；模块化重构是 v0.03+ 的事，本任务只搬家不改行为 |
 | 6 | 与 lab 迁移互相打架 | 598–1544 归属 lab | 本方案明确"不迁清单"；lab 方案另出，届时 site 已稳定 |
 | 7 | 与内核会话冲突 | R4 🔴 并发写入 | 本任务文件范围仅 `modules/site/` + `docs/plans/` + `src/ui/tokens.css`（新增，不修改 core） |
