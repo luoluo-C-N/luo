@@ -6,6 +6,7 @@
  * 迁移完成（S7）后改为事件绑定并删除 exposeGlobals 机制。
  * 状态与来源: docs/plans/site-migration.md
  */
+import * as state from './state.js';
 import manifest, { siteState } from './manifest.js';
 import { setTokenProvider } from './data/http.js';
 import * as appearance from './theme/appearance.js';
@@ -40,6 +41,7 @@ setTokenProvider(() => (typeof globalThis.authHeaders === 'function' ? globalThi
  * 过渡层登记表：全局函数名 → 模块内实现（脚本自动生成，勿手改名单）。
  */
 export const GLOBALS = {
+  ...state.__exports__,
   ...appearance.__exports__,
   ...audit.__exports__,
   ...auth.__exports__,

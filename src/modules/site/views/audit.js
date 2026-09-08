@@ -64,12 +64,8 @@ export function renderRealAudit(kind,rows){
 }
 
 export function auditAct(kind,id,status,card){
-  var url=kind==="cmt"
-    ?backBase()+"/api/comments/"+id+"/status"
-    :backBase()+"/api/messages/"+id+"/status";
-  fetch(url,{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},authHeaders()),
-    body:JSON.stringify({status:status})})
-    .then(function(r){if(!r.ok)throw new Error("fail");return r.json();})
+  var path={cmt:'comments',msg:'messages',cht:'chatters/comments'}[kind]||'comments';
+  jfetch(API_BASE+'/api/'+path+'/'+id+'/status',{method:'PUT',body:JSON.stringify({status:status})})
     .then(function(){
       card.style.opacity="";
       card.querySelectorAll("button").forEach(function(b){b.remove();});
@@ -93,7 +89,7 @@ export function auditAct(kind,id,status,card){
       };
       setTimeout(refreshAudit,5300);
     })
-    .catch(function(){toast("操作失败,请重试");});
+    .catch(function(e){toast("操作失败: "+(e&&e.message||'请重试'));});
 }
 
 export function auditDel(kind,id,btn){
