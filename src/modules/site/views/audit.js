@@ -1,12 +1,13 @@
 /** views/audit —— 审核收件箱（S4）。验收: SITE-FR4；三类+子级内联；pending 变化经 PEND 共享 */
 /* 逐字迁移自 src/prototype.js（步骤 S4）；行为变更需走评审。 */
+import { backBase } from '../data/http.js';
 
 export function refreshAudit(){
   if(!AUTH.token)return;
   var h=authHeaders();
   Promise.all([
-    fetch("http://localhost:8000/api/comments/admin?status=pending&size=20",{headers:h}).then(function(r){if(r.status===401)throw new Error("auth");return r.json();}),
-    fetch("http://localhost:8000/api/messages/admin?status=pending&size=20",{headers:h}).then(function(r){if(r.status===401)throw new Error("auth");return r.json();})
+    fetch(backBase()+"/api/comments/admin?status=pending&size=20",{headers:h}).then(function(r){if(r.status===401)throw new Error("auth");return r.json();}),
+    fetch(backBase()+"/api/messages/admin?status=pending&size=20",{headers:h}).then(function(r){if(r.status===401)throw new Error("auth");return r.json();})
   ]).then(function(rs){
     renderRealAudit("cmt",rs[0]);
     renderRealAudit("msg",rs[1]);
@@ -64,8 +65,8 @@ export function renderRealAudit(kind,rows){
 
 export function auditAct(kind,id,status,card){
   var url=kind==="cmt"
-    ?"http://localhost:8000/api/comments/"+id+"/status"
-    :"http://localhost:8000/api/messages/"+id+"/status";
+    ?backBase()+"/api/comments/"+id+"/status"
+    :backBase()+"/api/messages/"+id+"/status";
   fetch(url,{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},authHeaders()),
     body:JSON.stringify({status:status})})
     .then(function(r){if(!r.ok)throw new Error("fail");return r.json();})

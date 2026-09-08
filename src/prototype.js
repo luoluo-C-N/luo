@@ -885,7 +885,7 @@ function delModule(id){
 var AUTH={token:"",user:null};
 try{AUTH.token=localStorage.getItem("authToken")||"";AUTH.user=JSON.parse(localStorage.getItem("authUser")||"null");}catch(e){}
 /* ---- GitHub OAuth 登录 ---- */
-var GH_BACK='http://localhost:8000';
+var GH_BACK=window.backBase();
 (function(){
   var q=new URLSearchParams(location.search);
   if(q.get('auth_callback')==='1'&&q.get('token')){
@@ -1433,14 +1433,14 @@ var SVC_DOWN=[];
 })();
 
 /* ---------- 服务管理子页(一期:详情/重测/打开/复制;二期重启见文档15章) ---------- */
-var SVC_META={3000:{nm:'前台网站 Next.js',url:'http://localhost:3000/',ic:'🚀'},8000:{nm:'后台接口 FastAPI',url:'http://localhost:8000/api/health',ic:'⚙️'},8787:{nm:'App 代理 Pocket',url:'http://localhost:8787/',ic:'🌐'}};
+var SVC_META={3000:{nm:'前台网站 Next.js',url:'http://localhost:3000/',ic:'🚀'},8000:{nm:'后台接口 FastAPI',url:window.backBase()+'/api/health',ic:'⚙️'},8787:{nm:'App 代理 Pocket',url:'http://localhost:8787/',ic:'🌐'}};
 var SVC_CTRL=false;
 
 /* ---------- 连接设置(真机开箱即用) ---------- */
 var BACKEND_OK=null;
 /* 启动引导：后端不可达时提示进入连接设置 */
 setTimeout(function(){
-  fetch((localStorage.getItem('pocket.server')||'http://localhost:8000')+'/api/health',{cache:'no-store'})
+  fetch(window.backBase()+'/api/health',{cache:'no-store'})
     .then(function(r){return r.json();})
     .then(function(j){
       var ok=j&&j.status==='ok';

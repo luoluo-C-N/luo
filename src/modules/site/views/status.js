@@ -1,5 +1,6 @@
 /** views/status —— 服务器状态页（S3）。验收: SITE-FR1；15s 轮询、断网显示 — */
 /* 逐字迁移自 src/prototype.js（步骤 S3）；行为变更需走评审。 */
+import { backBase } from '../data/http.js';
 
 export function applySystemStatus(d){
   REAL_CACHE.uptimeDays=d.uptimeDays;
@@ -102,7 +103,7 @@ export function svcMgrRender(){
         '<div style="display:flex;gap:8px;margin-top:10px">'+
         '<button style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--glass);color:var(--accent);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="window.open(\''+meta.url+'\')">打开</button>'+
         '<button style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--glass);color:var(--ink-2);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="copySvcAddr(\''+meta.url+'\')">复制地址</button>'+
-        (p.port===8000?'<button style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--glass);color:var(--purple);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="window.open(\'http://localhost:8000/docs\')">API 文档</button>':'')+
+        (p.port===8000?'<button style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--glass);color:var(--purple);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="window.open(\'backBase()/docs\')">API 文档</button>':'')+
         '</div>'+
         (SVC_CTRL&&on&&(p.port===3000||p.port===8787)?'<div style="display:flex;gap:8px;margin-top:8px"><button style="flex:1;padding:8px;border:none;border-radius:10px;background:rgba(255,69,58,.10);color:var(--red);font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="restartSvc('+p.port+')">⚠ 重启该服务</button><div style="flex:1.4;font-size:11px;color:var(--ink-3);align-self:center">终止进程并拉起 · 需数秒恢复</div></div>':'')+
         '</div>';

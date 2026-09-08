@@ -1,5 +1,6 @@
 /** views/music —— 音乐管理（S5）。PUT 走 FormData；上传上限 50MB */
 /* 逐字迁移自 src/prototype.js（步骤 S5）；行为变更需走评审。 */
+import { backBase } from '../data/http.js';
 
 export function protoRenderMusic(rows){
   MUSIC_ROWS=rows||[];
@@ -42,8 +43,8 @@ export function protoMoveMusic(id,dir){
   var fa=new FormData();fa.append('sort',na);
   var fb=new FormData();fb.append('sort',nb);
   Promise.all([
-    fetch('http://localhost:8000/api/music/'+a.id,{method:'PUT',headers:authHeaders(),body:fa}),
-    fetch('http://localhost:8000/api/music/'+b.id,{method:'PUT',headers:authHeaders(),body:fb})
+    fetch(backBase()+'/api/music/'+a.id,{method:'PUT',headers:authHeaders(),body:fa}),
+    fetch(backBase()+'/api/music/'+b.id,{method:'PUT',headers:authHeaders(),body:fb})
   ]).then(function(rs){
     if(rs.some(function(r){return !r.ok;}))throw new Error('sort failed');
     toast('已调整排序');fetchProtoMusic();
@@ -51,14 +52,14 @@ export function protoMoveMusic(id,dir){
 }
 
 export function protoDelMusic(id){
-  fetch('http://localhost:8000/api/music/'+id,{method:'DELETE',headers:authHeaders()})
+  fetch(backBase()+'/api/music/'+id,{method:'DELETE',headers:authHeaders()})
     .then(function(r){return r.json();})
     .then(function(){fetchProtoMusic();toast('已删除');})
     .catch(function(){toast('删除失败');});
 }
 
 export function fetchProtoMusic(){
-  fetch('http://localhost:8000/api/music')
+  fetch(backBase()+'/api/music')
     .then(function(r){return r.json();})
     .then(function(j){protoRenderMusic(j&&j.data);})
     .catch(function(){protoRenderMusic(null);});
@@ -69,7 +70,7 @@ export function uploadMusicFile(input){
   var fd=new FormData();
   fd.append('file',f);
   fd.append('title',f.name.replace(/\.[^.]+$/,''));
-  fetch('http://localhost:8000/api/music/upload',{method:'POST',headers:authHeaders(),body:fd})
+  fetch(backBase()+'/api/music/upload',{method:'POST',headers:authHeaders(),body:fd})
     .then(function(r){return r.json();})
     .then(function(j){
       if(j&&j.code===0){fetchProtoMusic();toast('「'+j.data.title+'」已上传');}

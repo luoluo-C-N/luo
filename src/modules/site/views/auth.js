@@ -1,5 +1,6 @@
 /** views/auth —— 登录/注册/GitHub OAuth/退出（S6）。事件: site:auth-expired（待接） */
 /* 逐字迁移自 src/prototype.js（步骤 S6）；行为变更需走评审。 */
+import { backBase } from '../data/http.js';
 
 export function authHeaders(){return AUTH.token?{"Authorization":"Bearer "+AUTH.token}:{};}
 
@@ -9,7 +10,7 @@ export function doLogin(){
   var u=document.getElementById("loginUser").value.trim();
   var p=document.getElementById("loginPass").value;
   if(!u||!p){loginErr("请输入账号和密码");return;}
-  fetch("http://localhost:8000/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
+  fetch(backBase()+"/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({username:u,password:p})})
     .then(function(r){if(!r.ok)throw new Error("unauthorized");return r.json();})
     .then(function(j){
@@ -41,7 +42,7 @@ export function doRegister(){
   var n=document.getElementById('regNick').value.trim();
   var p=document.getElementById('regPass').value;
   if(!u||!p){loginErr('账号和密码不能为空');return;}
-  fetch("http://localhost:8000/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},
+  fetch(backBase()+"/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({username:u,password:p,nickname:n})})
     .then(function(r){return r.json().then(function(j){return {status:r.status,j:j};});})
     .then(function(res){
@@ -62,7 +63,7 @@ export function doRegister(){
 
 export function oauthTry(kind){
   var names={qq:'QQ',wechat:'微信'};
-  fetch('http://localhost:8000/api/auth/'+kind+'/login')
+  fetch(backBase()+'/api/auth/'+kind+'/login')
     .then(function(r){return r.json().then(function(j){return {status:r.status,j:j};});})
     .then(function(res){
       if(res.status===501){toast('⚠️ '+names[kind]+'登录需站长在服务端配置开放平台后开放');}

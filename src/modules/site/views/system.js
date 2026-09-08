@@ -1,5 +1,6 @@
 /** views/system —— 系统杂项（S7）：连接设置/云同步(占位)/通知/轮询注册。v0.04+ 拆往内核设置与 remind */
 /* 逐字迁移自 src/prototype.js（步骤 S7）；行为变更需走评审。 */
+import { backBase } from '../data/http.js';
 
 export function openConn(){
   var a=document.getElementById('connApi'),f=document.getElementById('connFront');
@@ -11,7 +12,7 @@ export function openConn(){
 
 export function connPaint(){
   var el=document.getElementById('connStatus');if(!el)return;
-  var eff=localStorage.getItem('pocket.server')||'(默认) http://localhost:8000';
+  var eff=localStorage.getItem('pocket.server')||'(默认) '+backBase();
   el.innerHTML='<div style="display:flex;align-items:center;gap:8px"><span class="dot" id="connDot" style="background:var(--ink-3)"></span><div style="flex:1"><div style="font-size:13px;font-weight:700">当前后端</div><div style="font-size:11.5px;color:var(--ink-3)">'+esc(eff)+'</div></div></div>';
 }
 
@@ -28,7 +29,7 @@ export function saveConn(){
 }
 
 export function testConn(silent){
-  var base=localStorage.getItem('pocket.server')||'http://localhost:8000';
+  var base=backBase();
   var t0=performance.now();
   fetch(base+'/api/health',{cache:'no-store'})
     .then(function(r){return r.json();})
