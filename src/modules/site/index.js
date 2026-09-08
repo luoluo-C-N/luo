@@ -8,17 +8,27 @@
  */
 import manifest, { siteState } from './manifest.js';
 import { setTokenProvider } from './data/http.js';
+import * as appearance from './theme/appearance.js';
 import * as audit from './views/audit.js';
 import * as auth from './views/auth.js';
+import * as backup from './data/backup.js';
 import * as content from './views/content.js';
 import * as crud from './views/crud.js';
 import * as dashboard from './views/dashboard.js';
+import * as drawer from './shell/drawer.js';
 import * as editor from './views/editor.js';
 import * as format from './data/format.js';
 import * as http from './data/http.js';
 import * as music from './views/music.js';
+import * as panels from './shell/panels.js';
 import * as profile from './views/profile.js';
+import * as rename from './theme/rename.js';
 import * as status from './views/status.js';
+import * as system from './views/system.js';
+import * as tabbar from './shell/tabbar.js';
+import * as tabs from './shell/tabs.js';
+import * as util from './shell/util.js';
+import * as wallpaper from './theme/wallpaper.js';
 
 export { default as manifest } from './manifest.js';
 export { siteState };
@@ -30,17 +40,27 @@ setTokenProvider(() => (typeof globalThis.authHeaders === 'function' ? globalThi
  * 过渡层登记表：全局函数名 → 模块内实现（脚本自动生成，勿手改名单）。
  */
 export const GLOBALS = {
+  ...appearance.__exports__,
   ...audit.__exports__,
   ...auth.__exports__,
+  ...backup.__exports__,
   ...content.__exports__,
   ...crud.__exports__,
   ...dashboard.__exports__,
+  ...drawer.__exports__,
   ...editor.__exports__,
   ...format.__exports__,
   ...http.__exports__,
   ...music.__exports__,
+  ...panels.__exports__,
   ...profile.__exports__,
+  ...rename.__exports__,
   ...status.__exports__,
+  ...system.__exports__,
+  ...tabbar.__exports__,
+  ...tabs.__exports__,
+  ...util.__exports__,
+  ...wallpaper.__exports__,
 };
 
 /**
