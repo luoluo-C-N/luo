@@ -1,0 +1,5 @@
+/* site 模块私有样式 —— 所有选择器强制 .mod-site 前缀（架构 §6.2）
+ * S1 占位；S2-S7 迁移时由 prototype.css 对应区块拆入，颜色一律引用 ui/tokens.css 变量。 */
+.mod-site[data-ready] {
+  /* 迁移期占位，避免空文件；S3 起替换为真实视图样式 */
+}
