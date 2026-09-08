@@ -31,6 +31,7 @@
 | R12 | 主密码遗忘导致 vault 数据永久不可恢复 | 低 | 极高 | 🟠 | 强制引导生成加密导出包 + 离线备份 | PM | v0.03 | 待办 |
 | R13 | 后端契约漂移（Schema 与实现不一致） | 中 | 中 | 🟡 | Schema 标注核验日期；评估 `GET /api/_meta` 自动发现 | Tech Lead | v0.05 | 待办 |
 | R14 | 硬编码后端地址约 20 处未清理 | 高 | 中 | 🟠 | 迁移 site 模块时统一走 `ctx.net`；CI 守卫已加（当前 warn 级） | Tech Lead | v0.02 | 待办 |
+| R15 | 本机 Git 异常：`refs/remotes/*` 写入静默失败（fetch/update-ref 报成功但不落盘） | 低 | 中 | 🟡 | 已用手动写引用文件临时修复；若复发（pull/status 异常），优先怀疑并发 git 进程干扰，用 `git ls-remote origin` 核对远端真值 | Tech Lead | 观察 | 监控中 |
 
 ---
 
