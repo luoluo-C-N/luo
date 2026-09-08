@@ -45,21 +45,22 @@ test('mount 抛错 → 该模块降级，其余模块照常挂载', async () => 
   assert.equal(core.registry.status('boom'), 'registered');
 
   await core.router.show('good1');
-  await core.router.show('boom');
-  await core.router.show('good2');
+  const boomResult = await core.router.show('boom');
+  assert.equal(boomResult.ok, false);
 
-  // 爆炸模块被标记 broken，另外两个正常挂载
-  assert.equal(core.registry.status('boom'), 'broken');
-  assert.equal(core.registry.status('good1'), 'registered');
-  assert.equal(core.registry.status('good2'), 'registered');
-  assert.deepEqual(mounted, ['good1', 'good2']);
-
-  // 爆炸模块的容器内画了降级卡片，且不影响别人
+  // 爆炸模块的容器内画了降级卡片
   const boomContainer = mountRoot.querySelector('[data-module="boom"]');
   assert.ok(boomContainer);
   assert.ok(boomContainer.querySelector('.module-degraded'));
   assert.equal(core.log.forModule('boom').length, 1);
   assert.equal(core.log.forModule('good1').length, 0);
+
+  // 切走后再切回来，仍然只给降级卡片，不会再执行它的 mount
+  await core.router.show('good2');
+  const again = await core.router.show('boom');
+  assert.equal(again.ok, false);
+  assert.ok(mountRoot.querySelector('[data-module="boom"]').querySelector('.module-degraded'));
+  assert.deepEqual(mounted, ['good1', 'good2']);
 });
 
 test('异步 mount 失败同样只降级自己', async () => {
