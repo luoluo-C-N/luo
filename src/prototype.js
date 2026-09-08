@@ -507,78 +507,7 @@ applyWallTuning();
 
 /* ============ 原型音乐段:接 Kirameku 后端(真实列表/上传/播放/删除) ============ */
 var MUSIC_ROWS=[];
-function protoRenderMusic(rows){
-  MUSIC_ROWS=rows||[];
-  CRUD_DATA.music=MUSIC_ROWS;
-  var host=document.getElementById('musicReal');if(!host)return;
-  host.innerHTML='';
-  if(!rows||!rows.length){host.style.display='none';return;}
-  host.style.display='block';
-  rows.forEach(function(r){
-    var el=document.createElement('div');el.className='music-row';
-    el.innerHTML='<div class="music-cov" style="background:linear-gradient(135deg,var(--accent),var(--accent2));cursor:pointer" title="播放" onclick="protoPlay('+q0()+String(r.url)+q0()+')"><span style="color:#fff;font-size:14px">▶</span></div>'+
-      '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(String(r.title))+'</div><div style="font-size:12px;color:var(--ink-2)">'+esc(String(r.artist||'本地上传'))+(r.duration?' · '+Math.floor(r.duration/60)+':'+String(r.duration%60).padStart(2,'0'):'')+'</div></div>'+
-      '<span class="chip chip-local">本地上传</span>'+
-      '<span class="crud-act" title="编辑信息" onclick="openCrudForm(&#39;music&#39;,'+r.id+')">✏️</span>'+
-      '<span class="crud-act" title="上移" onclick="protoMoveMusic('+r.id+',-1)">↑</span>'+
-      '<span class="crud-act" title="下移" onclick="protoMoveMusic('+r.id+',1)">↓</span>'+
-      '<span class="grip" title="删除" style="cursor:pointer;color:var(--red)" onclick="protoDelMusic('+r.id+')">🗑</span>';
-    host.appendChild(el);
-  });
-}
-function q0(){return String.fromCharCode(39);}
 var protoAudioEl=null;
-function protoPlay(url){
-  if(!protoAudioEl)protoAudioEl=document.getElementById('protoAudio');
-  if(!protoAudioEl)return;
-  if(protoAudioEl.dataset.src===url&&!protoAudioEl.paused){protoAudioEl.pause();return;}
-  protoAudioEl.dataset.src=url;
-  protoAudioEl.src=backBase()+url;
-  protoAudioEl.play().catch(function(){});
-}
-function protoMoveMusic(id,dir){
-  var i=-1;for(var x=0;x<MUSIC_ROWS.length;x++){if(MUSIC_ROWS[x].id===id){i=x;break;}}
-  var j=i+dir;if(i<0||j<0||j>=MUSIC_ROWS.length)return;
-  var a=MUSIC_ROWS[i],b=MUSIC_ROWS[j];
-  var sa=a.sort||0,sb=b.sort||0,na,nb;
-  if(sa===sb){na=MUSIC_ROWS.length-1-j;nb=MUSIC_ROWS.length-1-i;}
-  else{na=sb;nb=sa;}
-  var fa=new FormData();fa.append('sort',na);
-  var fb=new FormData();fb.append('sort',nb);
-  Promise.all([
-    fetch('http://localhost:8000/api/music/'+a.id,{method:'PUT',headers:authHeaders(),body:fa}),
-    fetch('http://localhost:8000/api/music/'+b.id,{method:'PUT',headers:authHeaders(),body:fb})
-  ]).then(function(rs){
-    if(rs.some(function(r){return !r.ok;}))throw new Error('sort failed');
-    toast('已调整排序');fetchProtoMusic();
-  }).catch(function(){toast('排序失败');});
-}
-function protoDelMusic(id){
-  fetch('http://localhost:8000/api/music/'+id,{method:'DELETE',headers:authHeaders()})
-    .then(function(r){return r.json();})
-    .then(function(){fetchProtoMusic();toast('已删除');})
-    .catch(function(){toast('删除失败');});
-}
-function fetchProtoMusic(){
-  fetch('http://localhost:8000/api/music')
-    .then(function(r){return r.json();})
-    .then(function(j){protoRenderMusic(j&&j.data);})
-    .catch(function(){protoRenderMusic(null);});
-}
-function uploadMusicFile(input){
-  var f=input.files&&input.files[0];if(!f)return;
-  var fd=new FormData();
-  fd.append('file',f);
-  fd.append('title',f.name.replace(/\.[^.]+$/,''));
-  fetch('http://localhost:8000/api/music/upload',{method:'POST',headers:authHeaders(),body:fd})
-    .then(function(r){return r.json();})
-    .then(function(j){
-      if(j&&j.code===0){fetchProtoMusic();toast('「'+j.data.title+'」已上传');}
-      else toast('上传失败');
-    })
-    .catch(function(){toast('上传失败：后端未启动');});
-  input.value='';
-}
 fetchProtoMusic();
 
 /* 壁纸/玻璃滑杆接线:拖动即实时预览(壁纸页自动淡出),松手自动回到本页 */
@@ -1834,66 +1763,10 @@ function updCounts(){cnt('n-posts',N.posts);cnt('n-moments',N.moments);cnt('n-mu
 
 /* ---------- 看板 hero + 待办计数(挂钩现有审核渲染) ---------- */
 var PEND={cmt:0,msg:0};
-function heroPend(){cnt('h-pending',(PEND.cmt||0)+(PEND.msg||0)+(PEND.cht||0));cnt('td-cmt',PEND.cmt);cnt('td-msg',PEND.msg);
-  var d1=document.getElementById('td-cmt-d');if(d1)d1.textContent=PEND.cmt+' 条等待处理';
-  var d2=document.getElementById('td-msg-d');if(d2)d2.textContent=PEND.msg+' 条等待处理';}
-function loadDash(){
-  jfetch(API_BASE+'/api/dashboard/stats').then(function(s){
-    var c=(s&&s.counts)||{};
-    cnt('h-visitors',c.visitors!=null?c.visitors:'—');
-    cnt('h-views',c.posts!=null?c.posts:'—');
-    heroPend();
-    renderTrend(s);
-  }).catch(function(){});
-}
 
 /* ---------- 文章 ---------- */
 var POSTS=[],POST_EDIT=null,PQ='';
 var PG={posts:1,moments:1},PAGE_SIZE=50,POSTS_MORE=false,MOMENTS_MORE=false;
-function loadPosts(){PG.posts=1;POSTS=[];_fetchPosts();}
-function loadMorePosts(){PG.posts++;_fetchPosts();}
-function _fetchPosts(){
-  jfetch(API_BASE+'/api/posts?size='+PAGE_SIZE+'&page='+PG.posts).then(function(l){
-    var list=unwrap(l)||[];
-    POSTS=POSTS.concat(list);
-    N.posts=POSTS.length;updCounts();renderPosts();
-  }).catch(function(e){lerrEl(document.getElementById('postsReal'),e);});
-}
-function renderPosts(){
-  var h=document.getElementById('postsReal');if(!h)return;
-  var kw=PQ.trim().toLowerCase();
-  var list=POSTS.filter(function(p){
-    if(kw&&String(p.title).toLowerCase().indexOf(kw)<0)return false;
-    if(PF==='published'&&p.status!=='published')return false;
-    if(PF==='draft'&&p.status!=='draft')return false;
-    return true;
-  });
-  if(!list.length){h.innerHTML=emptyCard(kw?'没有匹配的文章':'还没有文章 · 点右上角 ✍️ 写一篇');return;}
-  h.innerHTML=list.map(function(p){
-    var pub=p.status==='published';
-    return '<div class="card post-manage"><div class="pm-title">'+(p.is_pinned?'📌 ':'')+esc(p.title)+'</div>'+
-      '<div class="pm-meta"><span class="chip '+(pub?'chip-pub':'chip-draft')+'">'+(pub?'已发布':'草稿')+'</span>'+
-      '<span class="stat">👁 '+(p.views||0)+'</span><span class="stat">👍 '+(p.likes||0)+'</span>'+
-      '<span>'+fdate(p.updated_at||p.created_at)+'</span>'+
-      '<span class="pm-edit" onclick="openPostEditor('+p.id+')">编辑</span>'+
-      '<span class="crud-act" title="置顶/取消置顶" onclick="togglePin('+p.id+')">📌</span>'+
-      '<span class="crud-act" title="删除" style="color:var(--red)" onclick="delPost('+p.id+')">🗑</span></div></div>';
-  }).join('');
-  if(POSTS_MORE&&!kw)h.innerHTML+='<div class="card" style="padding:12px;text-align:center;font-size:13px;color:var(--accent);font-weight:700;cursor:pointer" onclick="loadMorePosts()">加载更多 ↓</div>';
-}
-function filterPosts(v){PQ=v||'';renderPosts();}
-function togglePin(id){
-  var p=POSTS.find(function(x){return x.id===id;});if(!p)return;
-  jfetch(API_BASE+'/api/posts/'+id,{method:'PUT',body:JSON.stringify({is_pinned:!p.is_pinned})})
-    .then(function(){toast(!p.is_pinned?'已置顶':'已取消置顶');loadPosts();}).catch(toastErr);
-}
-function delPost(id){
-  var p=POSTS.find(function(x){return x.id===id;});
-  askConfirm('删除文章「'+(p?p.title:id)+'」？不可恢复').then(function(ok){
-    if(!ok)return;
-    jfetch(API_BASE+'/api/posts/'+id,{method:'DELETE'}).then(function(){toast('已删除');loadPosts();loadDash();}).catch(toastErr);
-  });
-}
 function openPostEditor(id){
   jfetch(API_BASE+'/api/posts/detail/'+id).then(function(p){
     POST_EDIT=p;
@@ -1965,143 +1838,9 @@ function publishPost(){
 }
 
 /* ---------- 说说 ---------- */
-function loadMoments(){PG.moments=1;CRUD_DATA.chatters=[];_fetchMoments();}
-function loadMoreMoments(){PG.moments++;_fetchMoments();}
-function _fetchMoments(){
-  jfetch(API_BASE+'/api/chatters/admin?size='+PAGE_SIZE+'&page='+PG.moments,{headers:authHeaders()}).then(function(l){
-    var arr=unwrap(l)||[];
-    MOMENTS_MORE=arr.length===PAGE_SIZE;
-    CRUD_DATA.chatters=(CRUD_DATA.chatters||[]).concat(arr);
-    N.moments=CRUD_DATA.chatters.length;updCounts();
-    renderMoments();
-  }).catch(function(e){lerrEl(document.getElementById('momentsReal'),e);});
-}
-function renderMoments(){
-  {
-    var arr=CRUD_DATA.chatters||[];
-    var h=document.getElementById('momentsReal');if(!h)return;
-    if(!arr.length){h.innerHTML=emptyCard('还没有说说 · 点下方按钮发第一条');return;}
-    h.innerHTML=arr.map(function(m){
-      var pub=m.status==='published';
-      return '<div class="card moment-card"><div style="font-size:12px;color:var(--ink-3)">'+fdate(m.created_at)+
-        ' · <span style="color:'+(pub?'var(--green)':'var(--orange)')+';font-weight:600">'+(pub?'已发布':'草稿')+'</span></div>'+
-        '<div class="moment-text">'+esc(m.content)+'</div>'+
-        (m.images&&m.images.length?'<div class="moment-imgs">'+m.images.slice(0,3).map(function(){return '<div class="mi" style="background:linear-gradient(135deg,#7EB6F7,#C9A3F5)">🖼️</div>';}).join('')+'</div>':'')+
-        '<div class="moment-act"><span>👍 '+(m.likes||0)+'</span><span>💬 '+(m.comments_count||0)+'</span>'+
-        '<span class="crud-act" title="编辑" onclick="openCrudForm(\'chatters\','+m.id+')">✏️</span>'+
-        '<span style="margin-left:auto;color:var(--red);cursor:pointer" onclick="delMoment('+m.id+')">删除</span></div></div>';
-    }).join('');
-    if(MOMENTS_MORE)h.innerHTML+='<div class="card" style="padding:12px;text-align:center;font-size:13px;color:var(--accent);font-weight:700;cursor:pointer" onclick="loadMoreMoments()">加载更多 ↓</div>';
-  }
-}
-function delMoment(id){
-  askConfirm('删除这条说说？不可恢复').then(function(ok){
-    if(!ok)return;
-    jfetch(API_BASE+'/api/chatters/'+id,{method:'DELETE'}).then(function(){toast('已删除');loadMoments();loadDash();}).catch(toastErr);
-  });
-}
 
 /* ---------- 相册 ---------- */
 var ALBUMS=[],CUR_ALBUM=null,CUR_PHOTOS=[];
-function gotoAlbum(){jumpTab('scr-content');segTo('content','album');if(CUR_ALBUM)loadAlbumPhotos(CUR_ALBUM.id,CUR_ALBUM.title);else loadAlbums();}
-function loadAlbums(){
-  if(CUR_ALBUM){loadAlbumPhotos(CUR_ALBUM.id,CUR_ALBUM.title);return;}
-  jfetch(API_BASE+'/api/albums').then(function(l){
-    ALBUMS=unwrap(l)||[];N.albums=ALBUMS.length;updCounts();renderAlbums();
-  }).catch(function(e){lerrEl(document.getElementById('albumsReal'),e);});
-}
-function renderAlbums(){
-  var h=document.getElementById('albumsReal');if(!h)return;
-  var add=document.getElementById('albumAddBtn');if(add)add.style.display='';
-  if(!ALBUMS.length){h.innerHTML=emptyCard('还没有相册 · 点下方新建');return;}
-  h.innerHTML=ALBUMS.map(function(a){
-    return '<div class="card" style="padding:12px 14px;cursor:pointer" onclick="openAlbum('+a.id+')">'+
-      '<div style="display:flex;gap:12px;align-items:center">'+
-      (a.cover?'<img src="'+escAttr(imgSrc(a.cover))+'" style="width:52px;height:52px;border-radius:12px;object-fit:cover;flex-shrink:0" onerror="this.outerHTML=\'<div class=crud-ic style=&quot;width:52px;height:52px;font-size:22px&quot;>🏞️</div>\'">':'<div class="crud-ic" style="width:52px;height:52px;font-size:22px">🏞️</div>')+
-      '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600">'+esc(a.title)+'</div>'+
-      '<div style="font-size:12px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(a.description||'')+'</div></div>'+
-      '<span class="chip chip-local">'+(a.photo_count||0)+' 张</span>'+
-      '<span class="crud-act" onclick="event.stopPropagation();openCrudForm(\'albums\','+a.id+')">✏️</span></div></div>';
-  }).join('');
-}
-function openAlbum(id){var a=ALBUMS.find(function(x){return x.id===id;});if(!a)return;CUR_ALBUM=a;loadAlbumPhotos(id,a.title);}
-function closeAlbum(){
-  CUR_ALBUM=null;
-  var det=document.getElementById('albumDetail'),list=document.getElementById('albumsReal'),add=document.getElementById('albumAddBtn');
-  if(det){det.style.display='none';det.innerHTML='';}
-  if(list)list.style.display='';
-  if(add)add.style.display='';
-}
-function loadAlbumPhotos(id,title){
-  jfetch(API_BASE+'/api/albums/'+id+'/photos').then(function(l){
-    var arr=unwrap(l)||[];CUR_PHOTOS=arr;
-    var list=document.getElementById('albumsReal'),det=document.getElementById('albumDetail'),add=document.getElementById('albumAddBtn');
-    if(!det)return;
-    list.style.display='none';if(add)add.style.display='none';
-    det.style.display='block';
-    det.innerHTML='<div class="album-back" onclick="closeAlbum()">‹ 返回相册列表</div>'+
-      '<div class="card" style="padding:14px"><div style="font-size:15px;font-weight:700;margin-bottom:2px">'+esc(title)+'</div>'+
-      '<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">'+arr.length+' 张照片</div>'+
-      '<div class="gallery">'+arr.map(function(ph){
-        return '<div class="gcell photo-cell" title="'+escAttr(ph.caption||'')+'">'+
-          (imgSrc(ph.url)?'<img src="'+escAttr(imgSrc(ph.url))+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" onerror="this.parentNode.textContent=\'🖼️\'">':'🖼️')+
-          '<span class="photo-x" style="left:4px;right:auto;background:rgba(var(--accent-rgb),.78)" title="设为相册封面" onclick="event.stopPropagation();setCover('+ph.id+')">🖼</span>'+
-          '<span class="photo-x" onclick="delPhoto('+ph.id+')">✕</span></div>';
-      }).join('')+
-      '<div class="gcell add" onclick="document.getElementById(\'photoFile\').click()">✚</div>'+
-      '<div class="gcell add" style="font-size:13px" onclick="addPhotoUrl()">🔗</div></div></div>'+
-      '<div style="font-size:12px;color:var(--ink-3);text-align:center;margin-top:4px">✚ 上传手机照片 · 🔗 添加图片网址</div>';
-  }).catch(function(e){CUR_ALBUM=null;lerrEl(document.getElementById('albumsReal'),e);});
-}
-function delPhoto(pid){
-  if(!CUR_ALBUM){return;}
-  askConfirm('删除这张照片？不可恢复').then(function(ok){
-    if(!ok)return;
-    jfetch(API_BASE+'/api/albums/photos/'+pid,{method:'DELETE'}).then(function(){toast('已删除');loadAlbumPhotos(CUR_ALBUM.id,CUR_ALBUM.title);}).catch(toastErr);
-  });
-}
-function uploadPhotos(input){
-  var fs=input.files;if(!fs||!fs.length||!CUR_ALBUM)return;
-  var ok=0,fail=0;
-  var upOss=function(f){
-    var fd=new FormData();fd.append('file',f);
-    return fetch(API_BASE+'/api/upload/image',{method:'POST',headers:authHeaders(),body:fd})
-      .then(function(r){return r.json();})
-      .then(function(j){
-        if(!j||!j.url)throw new Error((j&&(j.detail||j.message))||'OSS 未配置');
-        return j;
-      });
-  };
-  var upLocal=function(f){
-    var fd=new FormData();fd.append('file',f);
-    return fetch(API_BASE+'/api/upload/image-local',{method:'POST',headers:authHeaders(),body:fd})
-      .then(function(r){return r.json();})
-      .then(function(j){
-        if(!j||!j.url)throw new Error((j&&(j.detail||j.message))||'本地上传失败');
-        return j;
-      });
-  };
-  var up=function(f){
-    return upOss(f).catch(function(){return upLocal(f);}).then(function(j){
-      return jfetch(API_BASE+'/api/albums/photos',{method:'POST',body:JSON.stringify({album_id:CUR_ALBUM.id,url:j.url,caption:f.name.replace(/\.[^.]+$/,''),orientation:j.orientation||'landscape'})});
-    });
-  };
-  var seq=Promise.resolve();
-  Array.prototype.forEach.call(fs,function(f){seq=seq.then(function(){return up(f).then(function(){ok++;}).catch(function(){fail++;});});});
-  seq.then(function(){
-    input.value='';
-    toast('已上传 '+ok+' 张'+(fail?' · 失败 '+fail+' 张，可点 🔗 用网址添加':''));
-    loadAlbumPhotos(CUR_ALBUM.id,CUR_ALBUM.title);
-  });
-}
-function addPhotoUrl(){
-  if(!CUR_ALBUM)return;
-  askText('添加图片网址','支持 https:// 链接或站内路径','https://… 或 /images/xx.webp').then(function(u){
-    if(!u)return;
-    jfetch(API_BASE+'/api/albums/photos',{method:'POST',body:JSON.stringify({album_id:CUR_ALBUM.id,url:u.trim(),caption:'',orientation:'landscape'})})
-      .then(function(){toast('已添加');loadAlbumPhotos(CUR_ALBUM.id,CUR_ALBUM.title);}).catch(toastErr);
-  });
-}
 
 /* ---------- 通用 CRUD 引擎 ---------- */
 var CRUD_K=null,CRUD_DATA={},FORM_K=null,FORM_ID=null,BMC=[];
@@ -2154,162 +1893,10 @@ var CRUD_DEFS={
     row:function(m){return '<div style="font-size:14.5px;font-weight:600">'+esc(m.title)+'</div><div style="font-size:11.5px;color:var(--ink-3)">'+esc(m.artist||'未知歌手')+'</div>';},
     chip:function(m){return '';}}
 };
-function openCrudAt(k){openSub('pg-crud');crudSegTo(k);}
-function gotoData(){jumpTab('scr-content');segTo('content','data');}
-function crudSegTo(k){
-  CRUD_K=k;
-  document.querySelectorAll('#seg-crud .seg').forEach(function(x){x.classList.toggle('on',x.dataset.k===k);});
-  var def=CRUD_DEFS[k]||{t:k==='bookmarks'?'收藏':'资料',ro:0};
-  document.getElementById('crudTitle').textContent=def.t+'管理';
-  document.getElementById('crudAddBtn').style.display=def.ro?'none':'';
-  loadCrud(k);
-}
-function crudAdd(){if(CRUD_K==='bookmarks')openCrudForm('bmc');else openCrudForm();}
-function loadCrud(k){
-  var h=document.getElementById('crudList');if(!h)return;
-  h.innerHTML=emptyCard('加载中…');
-  if(k==='visitors'){loadVisitors();return;}
-  if(k==='bookmarks'){loadBookmarks();return;}
-  var def=CRUD_DEFS[k];
-  jfetch(API_BASE+def.api+(def.admin||''),{headers:authHeaders()}).then(function(l){
-    var arr=unwrap(l)||[];CRUD_DATA[k]=arr;
-    if(!arr.length){h.innerHTML=emptyCard('暂无'+def.t+' · 点右上「＋ 新建」');return;}
-    h.innerHTML=arr.map(function(m){
-      var chip=def.chip(m);
-      return '<div class="card" style="padding:4px 14px"><div class="crud-row"><div class="crud-ic">'+def.ic+'</div>'+
-        '<div style="flex:1;min-width:0">'+def.row(m)+'</div>'+
-        (chip?'<span class="chip '+(chip==='已通过'||chip==='已发布'?'chip-pub':'chip-local')+'">'+esc(chip)+'</span>':'')+
-        (def.noSort?'':'<span class="crud-act" title="上移" onclick="moveCrud(\''+k+'\','+m.id+',-1)">↑</span><span class="crud-act" title="下移" onclick="moveCrud(\''+k+'\','+m.id+',1)">↓</span>')+
-        '<span class="crud-act" onclick="openCrudForm(\''+k+'\','+m.id+')">✏️</span>'+
-        '<span class="crud-act" style="color:var(--red)" onclick="delCrud(\''+k+'\','+m.id+')">🗑</span></div></div>';
-    }).join('');
-  }).catch(function(e){lerrEl(h,e);});
-}
-function delCrud(k,id){
-  var def=CRUD_DEFS[k];
-  askConfirm('删除这个'+def.t+'？不可恢复').then(function(ok){
-    if(!ok)return;
-  jfetch(API_BASE+def.api+'/'+id,{method:'DELETE'}).then(function(){
-    toast('已删除');loadDash();
-    if(k==='albums')loadAlbums();
-    else if(k==='chatters')loadMoments();
-    else if(k==='bmc'||k==='bms'||CRUD_K==='bookmarks')loadBookmarks();
-    if(CRUD_K&&document.getElementById('pg-crud').classList.contains('show'))loadCrud(CRUD_K);
-  }).catch(toastErr);
-  });
-}
-function openCrudForm(k,id,presetCat){
-  if(!k)k=CRUD_K||'categories';
-  FORM_K=k;FORM_ID=id||null;
-  var def=CRUD_DEFS[k];
-  var m=null;
-  if(id){var arr=CRUD_DATA[k]||[];for(var i=0;i<arr.length;i++){if(arr[i].id===id)m=arr[i];}}
-  document.getElementById('crudFormTitle').textContent=(id?'编辑':'新建')+' · '+def.t;
-  var render=function(){
-    var b=document.getElementById('crudFormBody');
-    b.innerHTML=def.fields.map(function(f){
-      var v=m&&m[f.k]!=null?m[f.k]:'';
-      if(f.t==='textarea')
-        return '<div class="fld"><label>'+f.l+(f.req?' *':'')+'</label><textarea rows="4" id="cf_'+f.k+'" placeholder="'+escAttr(f.ph||'')+'">'+esc(v)+'</textarea></div>';
-      if(f.t==='select'){
-        var opts=f.o.slice();
-        if(f.k==='category_id')opts=BMC.map(function(c){return {v:c.id,n:c.name};});
-        return '<div class="fld"><label>'+f.l+'</label><select id="cf_'+f.k+'">'+opts.map(function(o){
-          return '<option value="'+escAttr(String(o.v))+'"'+(String(v)===String(o.v)?' selected':'')+'>'+esc(o.n)+'</option>';}).join('')+'</select></div>';
-      }
-      if(f.t==='list')
-        return '<div class="fld"><label>'+f.l+'(逗号分隔)</label><input id="cf_'+f.k+'" value="'+escAttr(Array.isArray(v)?v.join(', '):String(v||''))+'" placeholder="'+escAttr(f.ph||'')+'"></div>';
-      var num=f.t==='number';
-      return '<div class="fld"><label>'+f.l+(f.req?' *':'')+'</label><input type="'+(num?'number':'text')+'" id="cf_'+f.k+'" value="'+escAttr(v)+'" placeholder="'+escAttr(f.ph||(f.auto?'留空自动生成':''))+'"></div>';
-    }).join('')+'<div style="height:8px"></div>';
-    if(presetCat){var sel=document.getElementById('cf_category_id');if(sel)sel.value=String(presetCat);}
-    openSub('pg-crud-form');
-  };
-  if(def.fields.some(function(f){return f.k==='category_id';})&&!BMC.length){
-    jfetch(API_BASE+'/api/bookmarks/categories').then(function(l){BMC=unwrap(l)||[];render();}).catch(function(e){toastErr(e);});
-  }else render();
-}
-function submitCrudForm(){
-  var def=CRUD_DEFS[FORM_K];if(!def)return;
-  var pl={};
-  for(var i=0;i<def.fields.length;i++){
-    var f=def.fields[i],el=document.getElementById('cf_'+f.k);
-    if(!el)continue;
-    var v=el.value;
-    if(f.t==='number')v=+v||0;
-    else if(f.t==='list')v=v.split(/[,，]/).map(function(x){return x.trim();}).filter(Boolean);
-    else v=v.trim();
-    if(f.bool&&v!=='')v=(v===true||v==='true');
-    if(f.req&&!v&&f.t!=='number'){toast(f.l+' 为必填');return;}
-    if(f.auto&&!v)v=slugify((document.getElementById('cf_name')||{}).value||(document.getElementById('cf_title')||{}).value);
-    if(v!==''||f.t==='number')pl[f.k]=v;
-  }
-  var body=pl,sendOpts={method:FORM_ID?'PUT':'POST',body:JSON.stringify(pl)};
-  if(def.form){var fd=new FormData();def.fields.forEach(function(f){var el=document.getElementById('cf_'+f.k);if(el&&el.value!=='')fd.append(f.k,el.value.trim());});body=fd;sendOpts={method:FORM_ID?'PUT':'POST',body:fd};}
-  var done=function(msg){toast(msg);closeSub('pg-crud-form');
-    if(FORM_K==='albums')loadAlbums();
-    else if(FORM_K==='chatters')loadMoments();
-    else if(FORM_K==='music')fetchProtoMusic();
-    else if(FORM_K!=='bms')loadCrud(FORM_K);
-    if(FORM_K==='bmc'||FORM_K==='bms')loadBookmarks();
-    else if(CRUD_K)loadCrud(CRUD_K);
-    loadDash();};
-  if(FORM_ID)jfetch(API_BASE+def.api+'/'+FORM_ID,sendOpts).then(function(){done('已保存');}).catch(toastErr);
-  else jfetch(API_BASE+def.api,sendOpts).then(function(){done('已创建');}).catch(toastErr);
-}
 
 /* ---------- 收藏夹(双层) ---------- */
-function loadBookmarks(){
-  var h=document.getElementById('crudList');if(!h)return;
-  h.innerHTML=emptyCard('加载中…');
-  Promise.all([jfetch(API_BASE+'/api/bookmarks/categories').then(unwrap),jfetch(API_BASE+'/api/bookmarks/sites').then(unwrap)])
-    .then(function(rs){
-      var cats=rs[0]||[],sites=rs[1]||[];
-      BMC=cats;CRUD_DATA['bmc']=cats;CRUD_DATA['bms']=sites;
-      if(!cats.length){h.innerHTML=emptyCard('暂无收藏夹 · 点右上「＋ 新建」');return;}
-      h.innerHTML=cats.map(function(c){
-        var ss=sites.filter(function(x){return x.category_id===c.id;});
-        return '<div class="card" style="padding:12px 14px">'+
-          '<div style="display:flex;align-items:center;gap:10px"><div class="crud-ic">'+esc(c.icon&&c.icon.length<=2?c.icon:'📁')+'</div>'+
-          '<div style="flex:1"><div style="font-size:14.5px;font-weight:700">'+esc(c.name)+'</div><div style="font-size:11.5px;color:var(--ink-3)">'+ss.length+' 个站点</div></div>'+
-          '<span class="crud-act" onclick="openCrudForm(\'bmc\','+c.id+')">✏️</span>'+
-          '<span class="crud-act" style="color:var(--red)" onclick="delCrud(\'bmc\','+c.id+')">🗑</span></div>'+
-          ss.map(function(sm){
-            return '<div class="crud-row" style="padding:8px 0 0 44px"><div style="flex:1;min-width:0">'+CRUD_DEFS.bms.row(sm)+'</div>'+
-              '<span class="crud-act" onclick="openCrudForm(\'bms\','+sm.id+')">✏️</span>'+
-              '<span class="crud-act" style="color:var(--red)" onclick="delCrud(\'bms\','+sm.id+')">🗑</span></div>';
-          }).join('')+
-          '<div class="crud-row" style="padding:8px 0 0 44px"><span style="font-size:12.5px;color:var(--accent);font-weight:700;cursor:pointer" onclick="openBmsForm('+c.id+')">＋ 添加站点</span></div></div>';
-      }).join('');
-    }).catch(function(e){lerrEl(h,e);});
-}
-function openBmsForm(cid){openCrudForm('bms',null,cid);}
 
 /* ---------- 访客(只读+清理) ---------- */
-function loadVisitors(){
-  var h=document.getElementById('crudList');if(!h)return;
-  jfetch(API_BASE+'/api/visitors?size=100').then(function(j){
-    var arr=unwrap(j)||[];
-    h.innerHTML='<div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:10px">'+
-      '<div style="flex:1;font-size:13px;font-weight:700">共 '+arr.length+' 条访问记录</div>'+
-      '<span class="crud-act" style="color:var(--red)" onclick="clearVisitors()">清空</span></div>'+
-      (arr.length?'':emptyCard('暂无访客记录'))+
-      arr.map(function(v){
-        return '<div class="card" style="padding:4px 14px"><div class="crud-row"><div class="crud-ic">'+(v.is_mobile?'📱':'💻')+'</div>'+
-          '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600">'+esc(v.ip)+'</div>'+
-          '<div style="font-size:11.5px;color:var(--ink-3)">'+esc([v.country,v.city].filter(Boolean).join(' · ')||'未知地区')+' · '+esc(v.browser||'?')+' / '+esc(v.os||'?')+'</div>'+
-          '<div style="font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(v.path||'/')+' · '+fdate(v.created_at)+'</div></div>'+
-          '<span class="crud-act" style="color:var(--red)" onclick="delVisitor('+v.id+')">🗑</span></div></div>';
-      }).join('');
-  }).catch(function(e){lerrEl(h,e);});
-}
-function delVisitor(id){jfetch(API_BASE+'/api/visitors/'+id,{method:'DELETE'}).then(function(){toast('已删除');loadVisitors();loadDash();}).catch(toastErr);}
-function clearVisitors(){
-  askConfirm('清空全部访客记录？不可恢复').then(function(ok){
-    if(!ok)return;
-    jfetch(API_BASE+'/api/visitors',{method:'DELETE'}).then(function(){toast('已清空');loadVisitors();loadDash();}).catch(toastErr);
-  });
-}
 
 /* 审核统一层 v2 已迁至 modules/site/views/audit.js（S4），AUDIT_MAP 留此供其他引用 */
 var AUDIT_MAP={cmt:/pane-review-cmt/,msg:/pane-review-msg/,cht:/pane-review-cht/};/nwindow.refreshAudit=function(){
@@ -2853,21 +2440,6 @@ function backupDb(){
 }
 
 /* ---------- 通用排序(上移/下移) ---------- */
-function moveCrud(k,id,dir){
-  var arr=CRUD_DATA[k]||[];
-  var i=-1;for(var x=0;x<arr.length;x++){if(arr[x].id===id){i=x;break;}}
-  var j=i+dir;
-  if(i<0||j<0||j>=arr.length)return;
-  var a=arr[i],b=arr[j];
-  var sa=a.sort||0,sb=b.sort||0;
-  var na,nb;
-  if(sa===sb){na=j;nb=i;}else{na=sb;nb=sa;}
-  var def=CRUD_DEFS[k];
-  Promise.all([
-    jfetch(API_BASE+def.api+'/'+a.id,{method:'PUT',body:JSON.stringify({sort:na})}),
-    jfetch(API_BASE+def.api+'/'+b.id,{method:'PUT',body:JSON.stringify({sort:nb})})
-  ]).then(function(){toast('已调整排序');loadCrud(k);}).catch(toastErr);
-}
 
 /* ---------- 服务状态/端口探测(真实可达性) ---------- */
 var SVC_DOWN=[];
@@ -3121,41 +2693,6 @@ function openNotif(){
 
 
 /* ---------- 看板分布/热门文章 ---------- */
-function renderDist(stats){
-  var box=document.getElementById('distCard');if(!box)return;
-  var cats=stats.category_distribution||[];
-  var brs=(stats.browser_distribution||[]).slice(0,4);
-  if(!cats.length&&!brs.length){box.innerHTML='<div style="font-size:12.5px;color:var(--ink-3);padding:8px 0">暂无分布数据</div>';}
-  else{
-    var catTotal=cats.reduce(function(a,b){return a+(b.value||0);},0)||1;
-    var seg=cats.map(function(c,i){
-      var colors=['var(--accent)','#30D158','#BF5AF2','#FF9F0A','#64D2FF'];
-      return '<div style="flex:'+(c.value||0)+';background:'+(colors[i%5])+';height:14px" title="'+esc(c.name)+' '+c.value+'"></div>';
-    }).join('');
-    var legend=cats.map(function(c,i){
-      var colors=['var(--accent)','#30D158','#BF5AF2','#FF9F0A','#64D2FF'];
-      return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:'+colors[i%5]+'"></span>'+esc(c.name)+' '+c.value+'</span>';
-    }).join(' <span style="color:var(--hairline)"></span>');
-    var brRows=brs.map(function(b){
-      var max=brs[0].value||1;
-      return '<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div style="width:64px;font-size:11.5px;color:var(--ink-2)">'+esc(b.name)+'</div><div style="flex:1;height:8px;border-radius:99px;background:var(--glass)"><div style="width:'+Math.round((b.value||0)/max*100)+'%;height:100%;border-radius:99px;background:linear-gradient(90deg,#30D158,#00C7BE)"></div></div><div style="font-size:11px;color:var(--ink-3)">'+b.value+'</div></div>';
-    }).join('');
-    box.innerHTML='<div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">文章分类分布</div>'+
-      (cats.length?'<div style="display:flex;gap:2px;border-radius:7px;overflow:hidden">'+seg+'</div><div style="margin-top:6px;display:flex;gap:10px;flex-wrap:wrap">'+legend+'</div>':'<div style="font-size:12px;color:var(--ink-3)">—</div>')+
-      '<div style="font-size:12px;color:var(--ink-2);margin:12px 0 2px">访客浏览器 TOP</div>'+brRows;
-  }
-  var top=(POSTS||[]).slice().sort(function(a,b){return (b.views||0)-(a.views||0);}).slice(0,5);
-  var tc=document.getElementById('topCard');
-  if(tc){
-    tc.innerHTML='<div style="font-size:12px;color:var(--ink-2);margin-bottom:6px">热门文章 TOP5 <span style="color:var(--ink-3)">· 按浏览量</span></div>'+
-      (top.length?top.map(function(p,i){
-        return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--hairline)">'+
-          '<div style="width:20px;text-align:center;font-weight:800;font-size:13px;color:'+(i===0?'var(--orange)':'var(--ink-3)')+'">'+(i+1)+'</div>'+
-          '<div style="flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</div>'+
-          '<div style="font-size:11.5px;color:var(--ink-3)">👁 '+(p.views||0)+'</div></div>';
-      }).join(''):'<div style="font-size:12.5px;color:var(--ink-3)">暂无文章</div>');
-  }
-}
 /* 直接包装：在原 loadDash 后追加分布渲染 */
 (function(){
   var _loadDash=loadDash;

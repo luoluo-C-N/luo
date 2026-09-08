@@ -9,8 +9,12 @@
 import manifest, { siteState } from './manifest.js';
 import { setTokenProvider } from './data/http.js';
 import * as audit from './views/audit.js';
+import * as content from './views/content.js';
+import * as crud from './views/crud.js';
+import * as dashboard from './views/dashboard.js';
 import * as format from './data/format.js';
 import * as http from './data/http.js';
+import * as music from './views/music.js';
 import * as status from './views/status.js';
 
 export { default as manifest } from './manifest.js';
@@ -24,8 +28,12 @@ setTokenProvider(() => (typeof globalThis.authHeaders === 'function' ? globalThi
  */
 export const GLOBALS = {
   ...audit.__exports__,
+  ...content.__exports__,
+  ...crud.__exports__,
+  ...dashboard.__exports__,
   ...format.__exports__,
   ...http.__exports__,
+  ...music.__exports__,
   ...status.__exports__,
 };
 
