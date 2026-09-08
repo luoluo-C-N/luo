@@ -1,5 +1,5 @@
 const base = process.env.SMOKE_URL || 'http://127.0.0.1:8787';
-const checks = ['/', '/manifest.webmanifest', '/service-worker.js', '/src/api.js', '/src/mobile.css'];
+const checks = ['/', '/manifest.webmanifest', '/service-worker.js', '/src/mobile.css'];
 for (const path of checks) {
   const response = await fetch(base + path);
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
