@@ -25,7 +25,7 @@ window.addEventListener('DOMContentLoaded',function(){
     var target=event.target;
     if(progress<=0.002){
      var rect=surface.getBoundingClientRect();
-     return event.clientX-rect.left<64;
+     return event.clientX-rect.left<96;
     }
     if(target.closest('#drawerMask'))return true;
     if(!target.closest('#drawer'))return false;

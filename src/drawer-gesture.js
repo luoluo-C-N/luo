@@ -72,7 +72,8 @@ export function installDrawerGesture({
     }
     event.preventDefault();
     drag.moved = true;
-    queueVisual(drag.p0 + dx / width);
+    // 修复 #5：把进度钳制在 [0,1]，避免已关闭抽屉被左滑/右滑带飞整个屏幕
+    queueVisual(Math.max(0, Math.min(1, drag.p0 + dx / width)));
     const now = performance.now();
     drag.samples.push({x: event.clientX, time: now});
     while (drag.samples.length > 6 || (drag.samples.length > 1 && now - drag.samples[0].time > 100)) drag.samples.shift();

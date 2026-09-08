@@ -212,6 +212,12 @@ try{cardSizes=JSON.parse(localStorage.getItem('cardSizes')||'{}');}catch(e){card
 (function(){
   var tk=null;try{tk=localStorage.getItem('authToken');}catch(e){}
   if(tk){var lg=document.getElementById('pg-login');if(lg)lg.classList.remove('show');}
+  // 修复 #2：未登录时不强制弹登录页（登录仅用于数据同步，非门禁）
+  if(!tk){
+    var lg2=document.getElementById('pg-login');if(lg2)lg2.classList.remove('show');
+    var nm=document.querySelector('.id-name');if(nm)nm.textContent='游客';
+    var sb=document.querySelector('.id-sub');if(sb)sb.textContent='轻触登录以同步数据';
+  }
   if(typeof subSyncScreens==='function')subSyncScreens();
 })();
 
