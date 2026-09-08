@@ -1,0 +1,21 @@
+node_modules/
+dist/
+release/
+artifacts/
+.env
+*.log
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+
+tools/
+.android-home/
+.gradle-home/
+
+# --- 协作与流程 ---
+# 注：聊天室.md / 项目速览.md 已于 2026-09-08 移出忽略列表。
+# 它们是本项目唯一的协作记录与上下文入口，必须纳入版本控制，
+# 否则新协作者 clone 后拿不到任何背景（曾导致回执丢失与新会话脱上下文）。
+docs/standup/
+*.local.md
