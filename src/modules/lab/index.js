@@ -12,6 +12,7 @@ import * as leditor from './editor.js';
 import * as lmanager from './manager.js';
 import * as lpanels from './panels.js';
 import * as lshare from './share.js';
+import * as lwizard from './wizard.js';
 import * as ltemplates from './templates.js';
 
 export { default as manifest } from './manifest.js';
@@ -27,6 +28,7 @@ export const GLOBALS = {
   ...lmanager.__exports__,
   ...lpanels.__exports__,
   ...lshare.__exports__,
+  ...lwizard.__exports__,
   ...ltemplates.__exports__,
 };
 
