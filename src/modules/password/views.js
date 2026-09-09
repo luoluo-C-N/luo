@@ -60,6 +60,7 @@ export async function renderPasswordList(container) {
 
   // 已解锁：加载条目
   const { loadEntries } = await import('./store.js');
+  const { groupByCategory } = await import('./strength.js');
   let entries = [];
   try { entries = await loadEntries(ctx); } catch (e) {
     container.appendChild(el('div', 'pw-locked', '⚠️ ' + e.message));
@@ -102,27 +103,42 @@ function renderEntryList(container, entries, ctx) {
     return;
   }
 
+  // 分类分组折叠
+  const { groupByCategory } = ctx ? { groupByCategory: null } : {};
+  const groups = {};
   for (const entry of entries) {
-    const card = el('div', 'pw-card');
-    card.appendChild(el('div', 'pw-card-title', entry.title ?? '未命名'));
-    if (entry.username) card.appendChild(el('div', 'pw-card-user', entry.username));
-    if (entry.url) card.appendChild(el('div', 'pw-card-url', entry.url));
+    const cat = entry.category ?? '默认';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(entry);
+  }
+  for (const [cat, items] of Object.entries(groups)) {
+    if (Object.keys(groups).length > 1) {
+      const header = el('div', 'pw-cat-header', cat + ' (' + items.length + ')');
+      header.addEventListener('click', () => header.classList.toggle('collapsed'));
+      list.appendChild(header);
+    }
+    for (const entry of items) {
+      const card = el('div', 'pw-card');
+      card.appendChild(el('div', 'pw-card-title', entry.title ?? '未命名'));
+      if (entry.username) card.appendChild(el('div', 'pw-card-user', entry.username));
+      if (entry.url) card.appendChild(el('div', 'pw-card-url', entry.url));
 
-    const actions = el('div', 'pw-actions');
-    const copyBtn = el('button', 'pw-action-btn', '复制密码');
-    copyBtn.addEventListener('click', () => copyPassword(entry.password));
-    actions.appendChild(copyBtn);
+      const actions = el('div', 'pw-actions');
+      const copyBtn = el('button', 'pw-action-btn', '复制密码');
+      copyBtn.addEventListener('click', () => copyPassword(entry.password));
+      actions.appendChild(copyBtn);
 
-    const delBtn = el('button', 'pw-action-btn pw-del', '删除');
-    delBtn.addEventListener('click', async () => {
-      const { deleteEntry } = await import('./store.js');
-      await deleteEntry(ctx, entry.id);
-      renderPasswordList(container);
-    });
-    actions.appendChild(delBtn);
+      const delBtn = el('button', 'pw-action-btn pw-del', '删除');
+      delBtn.addEventListener('click', async () => {
+        const { deleteEntry } = await import('./store.js');
+        await deleteEntry(ctx, entry.id);
+        renderPasswordList(container);
+      });
+      actions.appendChild(delBtn);
 
-    card.appendChild(actions);
-    list.appendChild(card);
+      card.appendChild(actions);
+      list.appendChild(card);
+    }
   }
   container.appendChild(list);
 }

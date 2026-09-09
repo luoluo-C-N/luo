@@ -317,6 +317,7 @@
         <div class="menu-row"><div class="icon-circle" style="background:rgba(var(--accent-rgb),.12)">⚙️</div>站点配置<span class="arrow">›</span></div>
         <div class="menu-row" onclick="openModules()"><div class="icon-circle" style="background:rgba(191,90,242,.12)">🧩</div>模块分区管理<span class="arrow">›</span></div>
       <div class="menu-row" onclick="openSub('pg-password')"><div class="icon-circle" style="background:rgba(48,209,88,.12)">🔐</div>密码管理<span class="arrow">›</span></div>
+      <div class="menu-row" onclick="openSub('pg-album')"><div class="icon-circle" style="background:rgba(100,210,255,.12)">📷</div>相册<span class="arrow">›</span></div>
       <div class="menu-row" onclick="openSub('pg-wallet')"><div class="icon-circle" style="background:rgba(255,159,10,.12)">💰</div>钱包<span class="arrow">›</span></div>
         <div class="menu-row" onclick="toast('开发时：友链管理列表')"><div class="icon-circle" style="background:rgba(48,209,88,.14)">🔗</div>友链管理<span class="arrow">›</span></div>
         <div class="menu-row" onclick="toast('开发时：项目管理列表')"><div class="icon-circle" style="background:rgba(255,159,10,.14)">📦</div>项目管理<span class="arrow">›</span></div>
@@ -562,6 +563,14 @@
     <div class="sub-body" id="walletContainer">钱包功能建设中（加密存储已就绪）</div>
   </div>
 
+  
+  <div class="subpage" id="pg-album">
+    <div class="sub-top">
+      <button class="sub-back" onclick="closeSub('pg-album')">‹</button>
+      <div class="sub-title">📷 相册</div>
+    </div>
+    <div class="sub-body" id="albumContainer">相册加载中…</div>
+  </div>
   <!-- ══════════ 子页 5：自编译模块管理(二次开发中心) ══════════ -->
   <div class="subpage" id="pg-mods">
     <div class="sub-top">

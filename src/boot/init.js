@@ -622,6 +622,15 @@ import('../modules/wallet/views.js').then(function(mod){
   var _w=window.openSub;
   if(typeof _w==='function'){window.openSub=function(id){_w(id);if(id==='pg-wallet')mod.renderWallet();};}
 }).catch(function(){});
+import('../modules/album/manifest.js').then(function(){
+  var _a=window.openSub;
+  if(typeof _a==='function'){window.openSub=function(id){
+    _a(id);
+    if(id==='pg-album'){var c=document.getElementById('albumContainer');if(c){c.replaceChildren();
+      var h=document.createElement('div');h.style.cssText='padding:20px;text-align:center;color:var(--ink-3)';h.textContent='📷 相册功能已就绪';c.appendChild(h);}
+    }
+  };}
+}).catch(function(){});
 import('../modules/password/views.js').then(function(mod){
   var _open=window.openSub;
   if(typeof _open==='function'){window.openSub=function(id){_open(id);if(id==='pg-password')mod.renderPasswordList();};}

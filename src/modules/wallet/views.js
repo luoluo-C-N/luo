@@ -34,6 +34,7 @@ export async function renderWallet(container) {
   }
 
   const { loadEntries, monthlySummary, categorySummary } = await import('./store.js');
+  const { renderMonthlyChart, trendArrow } = await import('./chart.js');
   const entries = await loadEntries(ctx);
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -45,6 +46,24 @@ export async function renderWallet(container) {
   sumRow.appendChild(makeSummaryCell('支出', summary.expense, 'var(--red)'));
   sumRow.appendChild(makeSummaryCell('结余', summary.net, summary.net >= 0 ? 'var(--green)' : 'var(--red)'));
   container.appendChild(sumRow);
+
+  // 月度图表（最近 6 个月）
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    months.push({ month: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, expense: 0 });
+  }
+  for (const e of entries) {
+    const ym = (e.date ?? '').slice(0, 7);
+    const m = months.find(m => m.month === ym);
+    if (m && e.type === 'expense') m.expense += e.amount;
+  }
+  renderMonthlyChart(container, months);
+  const trend = trendArrow(summary.expense, months.length > 1 ? months[months.length - 2].expense : 0);
+  const trendEl = el('div', 'wallet-trend');
+  trendEl.style.color = trend.color;
+  trendEl.textContent = `${trend.arrow} ${trend.text}（对比上月）`;
+  container.appendChild(trendEl);
 
   // 添加表单
   const form = el('div', 'wallet-form');
