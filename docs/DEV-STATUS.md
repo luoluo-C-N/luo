@@ -24,9 +24,12 @@
 | 最新提交 | 见 git log（15+ commits pushed） |
 | 注册模块 | site + lab + password + wallet + sync + album（6 模块） |
 | 注册模块 | site + lab + password + wallet + sync + album（6 模块） |
+| v0.21-40 | 密码生成器+数据备份+模块搜索/排序/复制/开关+离线检测+Toast队列+rate limiter+输入清洗+防抖+性能追踪 |
 | v0.11-15 | 钱包UI+同步骨架+相册骨架+集成测试+暗色快捷+骨架屏+重试 |
 | v0.11-15 | 钱包UI+同步骨架+相册骨架+集成测试+暗色快捷+骨架屏+重试 |
-| 测试 | `npm test` 全绿（69 项，含 4 项内核接线契约）· `npm run build` 65 资产 · `npm run smoke` 5 项 |
+| 测试 | 121/121 全绿 |
+| 版本目标 | v0.40 已达成 |
+| 旧测试计数 | `npm test` 全绿（69 项，含 4 项内核接线契约）· `npm run build` 65 资产 · `npm run smoke` 5 项 |
 | 后端契约 | `python tests/backend-contracts.py` 17/17（需 8011 隔离后端） |
 
 ### 已完成里程碑
