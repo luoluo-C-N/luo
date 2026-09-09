@@ -14,17 +14,19 @@ try {
   const { bootstrap } = await import('../core/index.js');
   const { createPreferencesDriver } = await import('../core/capabilities.js');
   const { createVault } = await import('../core/vault.js');
-  const [{ default: site }, { default: lab }, { default: password }, { default: wallet }] = await Promise.all([
+  const [{ default: site }, { default: lab }, { default: password }, { default: wallet }, { default: sync }, { default: album }] = await Promise.all([
     import('../modules/site/manifest.js'),
     import('../modules/lab/manifest.js'),
     import('../modules/password/manifest.js'),
     import('../modules/wallet/manifest.js'),
+    import('../modules/sync/manifest.js'),
+    import('../modules/album/manifest.js'),
   ]);
   // driver 由内核与 vault 共用（v0.03 安全地基：主密码派生密钥，明永不落盘）
   const driver = createPreferencesDriver();
   const vault = createVault({ driver });
   core = await bootstrap({
-    modules: [site, lab, password, wallet],
+    modules: [site, lab, password, wallet, sync, album],
     mountRoot: null,
     navRoot: null,
     defaultModule: null,

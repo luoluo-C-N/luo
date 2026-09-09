@@ -618,6 +618,10 @@ async function vaultAction(){
 }
 window.vaultAction=vaultAction;
 // 账号页打开时刷新 vault 状态
+import('../modules/wallet/views.js').then(function(mod){
+  var _w=window.openSub;
+  if(typeof _w==='function'){window.openSub=function(id){_w(id);if(id==='pg-wallet')mod.renderWallet();};}
+}).catch(function(){});
 import('../modules/password/views.js').then(function(mod){
   var _open=window.openSub;
   if(typeof _open==='function'){window.openSub=function(id){_open(id);if(id==='pg-password')mod.renderPasswordList();};}
