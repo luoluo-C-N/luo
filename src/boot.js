@@ -23,13 +23,16 @@ window.addEventListener('DOMContentLoaded',function(){
    canStart:function(event,progress){
     if(document.querySelector('.subpage.show'))return false;
     var target=event.target;
+    // 修复：遮罩上的点击必须放行给 closeDrawer()，不能被手势吃掉
+    if(target.closest('#drawerMask'))return false;
+    if(target.closest('input,select,textarea'))return false;
     if(progress<=0.002){
      var rect=surface.getBoundingClientRect();
-     return event.clientX-rect.left<96;
+     // 修复：触发区从 96px 放宽到左 40% 屏宽（横滑意图由轴向判定兜底）
+     return event.clientX-rect.left < rect.width*0.4;
     }
-    if(target.closest('#drawerMask'))return true;
     if(!target.closest('#drawer'))return false;
-    return !target.closest('.panel-row,.drawer-add,.drawer-row,.id-card,button,input,select,textarea,a');
+    return !target.closest('.panel-row,.drawer-add,.drawer-row,.id-card,button,a');
    },
    onStart:function(){surface.classList.add('drawer-dragging');},
    onEnd:function(){surface.classList.remove('drawer-dragging');}

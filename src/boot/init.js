@@ -217,6 +217,14 @@ try{cardSizes=JSON.parse(localStorage.getItem('cardSizes')||'{}');}catch(e){card
     var lg2=document.getElementById('pg-login');if(lg2)lg2.classList.remove('show');
     var nm=document.querySelector('.id-name');if(nm)nm.textContent='游客';
     var sb=document.querySelector('.id-sub');if(sb)sb.textContent='轻触登录以同步数据';
+    var av=document.querySelector('.id-avatar');if(av)av.textContent='游';
+  }else{
+    // 已登录：头像显示昵称首字（修复 #5：头像字符不再硬编码"洛"）
+    try{
+      var u=JSON.parse(localStorage.getItem('authUser')||'null');
+      var nick=(u&&(u.nickname||u.username))||'洛洛';
+      var av2=document.querySelector('.id-avatar');if(av2)av2.textContent=nick.charAt(0);
+    }catch(e){}
   }
   if(typeof subSyncScreens==='function')subSyncScreens();
 })();

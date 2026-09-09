@@ -137,6 +137,11 @@ export function renderWizard(container, state, onChange) {
 
   const head = el('div', 'wiz-head');
   head.appendChild(el('div', 'wiz-title', `第 ${state.step + 1} / ${STEPS.length} 步 · ${STEPS[state.step]}`));
+  // 修复 #1：右上角关闭按钮（点 ✕ 直接退出向导）
+  const close = el('button', 'wiz-close', '✕');
+  close.setAttribute('aria-label', '关闭向导');
+  close.addEventListener('click', () => onChange({ ...state, finished: true, cancelled: true }));
+  head.appendChild(close);
   container.appendChild(head);
 
   if (state.step === 0) renderForms(container, state, onChange);
@@ -278,6 +283,13 @@ export function wizardFlow() {
 
 function render() {
   if (wizardState.finished) {
+    if (wizardState.cancelled) {
+      // 用户主动关闭：不保存，直接退出
+      wizardState = createDraft();
+      if (wizardHost) wizardHost.replaceChildren?.();
+      if (typeof window?.toast === 'function') window.toast('已退出零代码创建');
+      return;
+    }
     try {
       const draft = buildModuleDraft(wizardState);
       if (typeof window?.saveModule === 'function') window.saveModule(draft);
