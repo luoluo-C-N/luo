@@ -1,0 +1,53 @@
+/* lab · 预设模块渲染样式（零代码模块在面板中的外观） */
+.preset-card{background:var(--card);border-radius:var(--radius-m,16px);padding:16px;
+  border:1px solid var(--glass-border);min-height:80px}
+.preset-title{font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.preset-body{min-height:36px}
+.preset-loading{text-align:center;color:var(--ink-3);padding:12px}
+.preset-error{font-size:12px;color:var(--red);padding:8px 0}
+.preset-empty{font-size:12px;color:var(--ink-3);padding:8px 0}
+
+/* stat */
+.preset-stat{text-align:center;padding:4px 0}
+.preset-stat-label{font-size:11px;color:var(--ink-3)}
+.preset-stat-value{font-size:28px;font-weight:800;color:var(--ink);margin-top:4px;letter-spacing:-.5px}
+
+/* status */
+.preset-status{display:flex;align-items:center;gap:8px;padding:4px 0}
+.preset-dot{width:10px;height:10px;border-radius:50%;background:var(--red)}
+.preset-dot.on{background:var(--green)}
+.preset-status-text{font-size:14px;font-weight:650;color:var(--ink)}
+
+/* progress */
+.preset-progress{padding:4px 0}
+.preset-progress-label{font-size:11px;color:var(--ink-3);margin-bottom:6px}
+.preset-progress-bar{height:8px;border-radius:4px;background:var(--glass);overflow:hidden}
+.preset-progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width .4s var(--ease-item)}
+.preset-progress-pct{font-size:12px;font-weight:700;color:var(--ink-2);margin-top:4px;text-align:right}
+
+/* list / dynlist */
+.preset-list-title{font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:8px}
+.preset-list-item{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--hairline);
+  font-size:13.5px;color:var(--ink);line-height:1.4;min-height:36px;gap:6px}
+.preset-list-item:last-child{border-bottom:none}
+.preset-list-item.clickable{cursor:pointer}
+.preset-list-item.clickable:active{background:var(--glass)}
+.preset-arrow{margin-left:auto;color:var(--ink-3);font-size:16px}
+.preset-action{margin-left:auto;padding:4px 10px;border-radius:10px;border:none;font-size:11px;font-weight:700;
+  background:var(--accent-soft);color:var(--accent);cursor:pointer;flex-shrink:0;font-family:inherit}
+.preset-action:disabled{opacity:.5}
+
+/* chart */
+.preset-bars{display:flex;align-items:end;gap:4px;height:90px;padding-top:8px}
+.preset-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.preset-bar{width:100%;max-width:28px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--accent),var(--purple));min-height:4px}
+.preset-bar-val{font-size:9px;color:var(--ink-3)}
+
+/* toggle */
+.preset-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.preset-toggle-label{font-size:14px;font-weight:650;color:var(--ink)}
+.preset-toggle{width:48px;height:28px;border-radius:14px;background:var(--glass-border);position:relative;cursor:pointer;transition:background .2s}
+.preset-toggle.on{background:var(--green)}
+.preset-toggle-knob{width:24px;height:24px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;
+  transition:transform .2s var(--ease-item);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.preset-toggle.on .preset-toggle-knob{transform:translateX(20px)}

@@ -3,6 +3,11 @@
 
 export function renderModInto(m,g){
   try{
+    if(m.render==='preset'){
+      // 零代码向导产物：走预设渲染引擎
+      import('./preset-render.js').then(function(mod){mod.renderPresetModule(m,g);});
+      m._last=Date.now();return;
+    }
     if(m.type==='code')renderCodeModule(m,g);
     else renderTplModule(m,g);
     m._last=Date.now();
