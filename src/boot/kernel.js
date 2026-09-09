@@ -12,16 +12,24 @@ import '../modules/lab/index.js';
 let core = null;
 try {
   const { bootstrap } = await import('../core/index.js');
+  const { createPreferencesDriver } = await import('../core/capabilities.js');
+  const { createVault } = await import('../core/vault.js');
   const [{ default: site }, { default: lab }] = await Promise.all([
     import('../modules/site/manifest.js'),
     import('../modules/lab/manifest.js'),
   ]);
+  // driver 由内核与 vault 共用（v0.03 安全地基：主密码派生密钥，明永不落盘）
+  const driver = createPreferencesDriver();
+  const vault = createVault({ driver });
   core = await bootstrap({
     modules: [site, lab],
     mountRoot: null,
     navRoot: null,
     defaultModule: null,
+    driver,
+    vault,
   });
+  core.vault = vault;
 } catch (error) {
   // 内核失败只降级内核能力：迁移期 UI 仍完整可用
   console.error('[core] 内核启动失败，已降级（功能不受影响）', error);

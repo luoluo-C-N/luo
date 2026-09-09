@@ -26,6 +26,7 @@
 - ✅ **T4.8**：`prototype.js` 已删除——状态入 `modules/{site,lab}/state.js`，启动初始化入 `src/boot/init.js`
 - ✅ **5 项真机 UX 修复**：安全区适配 / 免强制登录 / 抽屉易滑出 / 抽屉实色 / 页面不被拖飞
 - ✅ **v0.02 内核接线**：单入口 src/boot/kernel.js（静态导入 site/lab 暴露过渡层 → 动态启动内核登记模块建 ctx → 最后加载启动初始化）；内核失败仅降级内核能力
+- ✅ **v0.03 vault 地基**：src/core/vault.js（PBKDF2-SHA256 12 万次派生 + AES-GCM；仅存盐与校验密文，锁定即丢弃内存密钥；5 分钟自动锁定）；已注入内核 ctx（仅对声明 vault 权限的模块可见）
 - ✅ **仓库精简**：移除废弃脚本、旧原型快照、Capacitor 模板测试、迁移期死代码
 
 ### 架构速览
@@ -49,7 +50,7 @@ src/ui/tokens.css  设计令牌单一事实源（有快照测试保护）
 
 1. **🔴 真机全功能复核**（用户）：装最新 APK 点全流程——看板数字/文章发布→前台可见/审核/音乐/自定义模块/深色模式/壁纸/抽屉手势/安全区
 2. **v0.02 收尾**：内核 `src/core/`（已有 bus/capabilities/errors/registry/router，另一会话建）接入 index.html 启动链，site/lab 的 mount 真正挂进内核，故障隔离测试通过
-3. **v0.03**：vault 安全地基（主密码/PBKDF2/AES-GCM）+ 收紧 cleartext 配置（准入条件见架构 §8.3）
+3. **v0.03（剩余）**：vault 设置 UI（设置主密码/解锁/自动锁定开关）+ 收紧 cleartext 配置（准入条件见架构 §8.3）
 4. **v0.04**：lab 零代码绑定引擎——点选式字段选择器（ADR-0002），验收：零代码建「待审评论」模块 ≤60s
 5. **v0.05/v0.06**：album 图床 → password/wallet 敏感模块
 6. 小尾巴：`core/capabilities.js` 里 1 处硬编码地址（内核会话范围）；`掌上小站-v0.01-debug.apk` 旧产物可删
