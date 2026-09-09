@@ -120,3 +120,9 @@
   background:var(--glass-strong);color:var(--ink);font-size:16px;margin-bottom:8px}
 .pw-input:focus{border-color:var(--accent);outline:none}
 .pw-search:focus{border-color:var(--accent);outline:none}
+
+/* 相册网格 */
+.album-toolbar{margin-bottom:12px}
+.album-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.album-cell{aspect-ratio:1;border-radius:12px;background:var(--glass);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.album-placeholder{font-size:28px;color:var(--ink-3)}
