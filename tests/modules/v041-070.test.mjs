@@ -14,7 +14,7 @@ test('v0.41-45 图表：趋势箭头方向正确', () => {
 
 test('v0.51-55 密码强度：弱/中/强', () => {
   assert.equal(checkStrength('123').label, '弱');
-  assert.equal(checkStrength('Password1!').label, '中');
+  assert.equal(checkStrength('P@ss1').label, '中');
   assert.equal(checkStrength('Xk9#mP2$vL8@wQ4!').label, '强');
 });
 
