@@ -23,7 +23,8 @@
 | 可运行产物 | `release/kirameku-0.01-debug.apk`（debug 签名，v2 验证通过） |
 | 最新提交 | 见 git log（15+ commits pushed） |
 | 注册模块 | site + lab + password + wallet + sync + album（6 模块） |
-| 注册模块 | site + lab + password + wallet（4 模块） |
+| 注册模块 | site + lab + password + wallet + sync + album（6 模块） |
+| v0.11-15 | 钱包UI+同步骨架+相册骨架+集成测试+暗色快捷+骨架屏+重试 |
 | v0.11-15 | 钱包UI+同步骨架+相册骨架+集成测试+暗色快捷+骨架屏+重试 |
 | 测试 | `npm test` 全绿（69 项，含 4 项内核接线契约）· `npm run build` 65 资产 · `npm run smoke` 5 项 |
 | 后端契约 | `python tests/backend-contracts.py` 17/17（需 8011 隔离后端） |
