@@ -37,6 +37,7 @@ function randomBytes(length) {
  */
 export function createVault(options = {}) {
   const driver = options.driver;
+  const bus = options.bus;
   const iterations = options.iterations ?? DEFAULT_ITERATIONS;
   const autoLockMs = options.autoLockMs ?? 5 * 60 * 1000;
 
@@ -70,6 +71,7 @@ export function createVault(options = {}) {
 
   function lock() {
     cryptoKey = null;
+    if (bus) bus.emit('vault:locked', {});
     if (timer) { clearTimeout(timer); timer = 0; }
   }
 
@@ -111,6 +113,7 @@ export function createVault(options = {}) {
       cryptoKey = key;
       lastError = null;
       scheduleAutoLock();
+      if (bus) bus.emit('vault:unlocked', {});
       return true;
     },
 
@@ -131,6 +134,7 @@ export function createVault(options = {}) {
       cryptoKey = key;
       lastError = null;
       scheduleAutoLock();
+      if (bus) bus.emit('vault:unlocked', {});
       return true;
     },
 

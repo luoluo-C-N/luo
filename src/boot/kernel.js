@@ -24,7 +24,9 @@ try {
   ]);
   // driver 由内核与 vault 共用（v0.03 安全地基：主密码派生密钥，明永不落盘）
   const driver = createPreferencesDriver();
-  const vault = createVault({ driver });
+  const { createBus } = await import('../core/bus.js');
+  const bus = createBus();
+  const vault = createVault({ driver, bus });
   core = await bootstrap({
     modules: [site, lab, password, wallet, sync, album],
     mountRoot: null,

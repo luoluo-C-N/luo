@@ -85,13 +85,18 @@ export function installDrawerGesture({
 
   function pointerEnd(event) {
     if (!drag || event.pointerId !== drag.pointerId) return;
-    if (frame > 0) cancelSchedule(frame);
-    frame = 0;
-    flushVisual();
-    const finished = drag;
-    releasePointer();
-    drag = null;
-    onEnd();
+    let finished;
+    try {
+      if (frame > 0) cancelSchedule(frame);
+      frame = 0;
+      flushVisual();
+      finished = drag;
+      releasePointer();
+      drag = null;
+      onEnd();
+    } finally {
+      if (surface.style) surface.style.touchAction = ''; // BUG-008
+    }
     if (finished.axis !== 'x') return;
     const samples = finished.samples;
     let velocity = 0;

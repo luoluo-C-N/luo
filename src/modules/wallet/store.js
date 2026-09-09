@@ -5,6 +5,17 @@
  * 存储同 password 模块：vault 加密后 localStorage。
  */
 
+/** BUG-003 修复：写入互斥锁（Promise 链队列，保证顺序执行） */
+let _writeQueue = Promise.resolve();
+function withLock(fn) {
+  const run = _writeQueue.then(fn, fn); // 无论前一个成功还是失败都执行
+  _writeQueue = run.catch(() => {});
+  return run;
+}
+
+/** 带锁的写入操作（addEntry/updateEntry/deleteEntry 内部调用） */
+function lockedWrite(fn) { return withLock(fn); }
+
 const STORE_KEY = 'wallet:vault';
 
 function getVault(ctx) {

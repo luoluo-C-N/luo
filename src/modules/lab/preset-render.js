@@ -155,6 +155,21 @@ const RENDERERS = {
 };
 
 /** 主入口：渲染一个 preset 模块到网格容器 */
+/** BUG-002 修复：面板不可见时停止刷新定时器 */
+let panelObserver = null;
+function watchPanelVisibility(grid, m) {
+  if (!panelObserver) {
+    panelObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) stopRefresh(entry.target.dataset?.modId);
+      }
+    }, { threshold: 0.1 });
+  }
+  grid.dataset = grid.dataset ?? {};
+  grid.dataset.modId = m.id;
+  panelObserver.observe(grid);
+}
+
 export function renderPresetModule(m, grid) {
   const card = el('div', 'preset-card preset-' + (m.kind ?? 'stat'));
   card.appendChild(el('div', 'preset-title', m.title ?? ''));
@@ -168,6 +183,7 @@ export function renderPresetModule(m, grid) {
   fetchBound(m)
     .then((values) => {
       startRefresh(m.id, () => renderPresetModule(m, grid), 30000);
+      watchPanelVisibility(grid, m);
       body.replaceChildren?.();
       const renderer = RENDERERS[m.kind] ?? RENDERERS.stat;
       body.appendChild(renderer(values, m));

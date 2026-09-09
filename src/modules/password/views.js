@@ -114,7 +114,15 @@ function renderEntryList(container, entries, ctx) {
   for (const [cat, items] of Object.entries(groups)) {
     if (Object.keys(groups).length > 1) {
       const header = el('div', 'pw-cat-header', cat + ' (' + items.length + ')');
-      header.addEventListener('click', () => header.classList.toggle('collapsed'));
+      header.addEventListener('click', () => {
+        const isCollapsed = header.classList.toggle('collapsed');
+        // BUG-005 修复：用 JS 直接控制后续卡片的显示/隐藏
+        let next = header.nextElementSibling;
+        while (next && !next.classList.contains('pw-cat-header')) {
+          next.style.display = isCollapsed ? 'none' : '';
+          next = next.nextElementSibling;
+        }
+      });
       list.appendChild(header);
     }
     for (const entry of items) {

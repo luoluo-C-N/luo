@@ -303,7 +303,7 @@ function render() {
     if (wizardState.cancelled) {
       // 用户主动关闭：不保存，直接退出
       wizardState = createDraft();
-      if (wizardHost) wizardHost.replaceChildren?.();
+      if (wizardHost) { wizardHost.remove(); wizardHost = null; } // BUG-007 修复：移除容器
       if (typeof window?.toast === 'function') window.toast('已退出零代码创建');
       return;
     }
@@ -315,7 +315,7 @@ function render() {
       if (typeof window?.toast === 'function') window.toast('⚠️ ' + error.message);
     }
     wizardState = createDraft();
-    if (wizardHost) wizardHost.replaceChildren?.();
+    if (wizardHost) { wizardHost.remove(); wizardHost = null; } // BUG-007
     return;
   }
   renderWizard(wizardHost, wizardState, (next) => { wizardState = next; render(); });
