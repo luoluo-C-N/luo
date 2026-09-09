@@ -475,8 +475,7 @@ setTimeout(function(){
     })
     .catch(function(){
       connStatePaint(false);BACKEND_OK=false;
-      toast('⚠️ 无法连接后端 · 点「我的 → 连接设置」');
-      openSub('pg-conn');
+      toast('⚠️ 无法连接后端（离线模式可用）');
     });
 },1200);
 
