@@ -26,9 +26,10 @@
 - ✅ **T4.8**：`prototype.js` 已删除——状态入 `modules/{site,lab}/state.js`，启动初始化入 `src/boot/init.js`
 - ✅ **5 项真机 UX 修复**：安全区适配 / 免强制登录 / 抽屉易滑出 / 抽屉实色 / 页面不被拖飞
 - ✅ **v0.02 内核接线**：单入口 src/boot/kernel.js（静态导入 site/lab 暴露过渡层 → 动态启动内核登记模块建 ctx → 最后加载启动初始化）；内核失败仅降级内核能力
-- ✅ **v0.03 vault 地基**：src/core/vault.js（PBKDF2-SHA256 12 万次派生 + AES-GCM；仅存盐与校验密文，锁定即丢弃内存密钥；5 分钟自动锁定）；已注入内核 ctx（仅对声明 vault 权限的模块可见）
+- ✅ **v0.03 vault 完整**：src/core/vault.js + pg-account 页面 UI（设置主密码/解锁/锁定三态切换）：src/core/vault.js（PBKDF2-SHA256 12 万次派生 + AES-GCM；仅存盐与校验密文，锁定即丢弃内存密钥；5 分钟自动锁定）；已注入内核 ctx（仅对声明 vault 权限的模块可见）
 - ✅ **v0.04 零代码创建向导**：lab/wizard.js（5 步：形态→数据源→点样例选字段→格式化/变换→动作）+ lab/style.css + 二次开发页「✨ 零代码创建」入口；8 项契约测试
-- 🔨 **v0.04 绑定引擎（地基已就）**：lab/sources.js 18 个数据源注册表 + lab/binding.js（安全路径解析/中文面包屑/8 种格式化/7 种变换）+ 7 项契约测试；**待做**：点选式字段选择器 UI 与动作绑定
+- ✅ **v0.04 零代码绑定（完整闭环）**：向导创建 → renderModInto 走 preset 分支 → preset-render.js 按 7 形态渲染 → 动作按钮（通过/拒绝/删除/置顶）→ 执行后标记完成
+- ✅ **仓库精简**：lab/sources.js 18 个数据源注册表 + lab/binding.js（安全路径解析/中文面包屑/8 种格式化/7 种变换）+ 7 项契约测试；**待做**：点选式字段选择器 UI 与动作绑定
 - ✅ **仓库精简**：移除废弃脚本、旧原型快照、Capacitor 模板测试、迁移期死代码
 
 ### 架构速览

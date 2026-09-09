@@ -573,3 +573,46 @@ if(typeof refreshAudit==='function')refreshAudit();
 (function(){if(typeof doLogin==='function'){var _d=window.doLogin;window.doLogin=function(){_d();setTimeout(function(){loadMoments();loadDash();if(typeof refreshAudit==='function')refreshAudit();loadPosts();loadAlbums();loadCrud&&CRUD_K&&loadCrud(CRUD_K);},900);};}})();
 
 
+
+
+/* ---------- Vault（v0.03 UI） ---------- */
+async function vaultRefresh(){
+  try{
+    var core=globalThis.__POCKET_CORE__;if(!core||!core.vault)return;
+    var v=core.vault;
+    var isSet=await v.isSet();
+    var unlocked=v.isUnlocked();
+    var st=document.getElementById('vaultStatus');
+    var form=document.getElementById('vaultForm');
+    var btn=document.getElementById('vaultBtn');
+    if(!st||!form||!btn)return;
+    if(!isSet){st.textContent='尚未设置主密码。设置后可加密存储敏感数据。';form.style.display='block';btn.textContent='设置主密码';}
+    else if(unlocked){st.innerHTML='<span style="color:var(--green)">● 已解锁</span> — 敏感数据可读写';form.style.display='block';btn.textContent='锁定';}
+    else{st.innerHTML='<span style="color:var(--orange)">● 已锁定</span> — 输入主密码解锁';form.style.display='block';btn.textContent='解锁';}
+  }catch(e){console.warn('[vault]',e)}
+}
+async function vaultAction(){
+  try{
+    var core=globalThis.__POCKET_CORE__;if(!core||!core.vault)return;
+    var v=core.vault;
+    var pass=document.getElementById('vaultPass');if(!pass)return;
+    var pw=pass.value;if(!pw){window.toast&&window.toast('请输入主密码');return;}
+    var btn=document.getElementById('vaultBtn');
+    if(btn)btn.disabled=true;
+    try{
+      if(!await v.isSet())await v.setMaster(pw);
+      else if(!v.isUnlocked()){var ok=await v.unlock(pw);if(!ok){window.toast&&window.toast('密码错误');return;}}
+      else v.lock();
+      pass.value='';
+      window.toast&&window.toast(v.isUnlocked()?'已解锁':'已锁定');
+    }finally{if(btn)btn.disabled=false;}
+    vaultRefresh();
+  }catch(e){window.toast&&window.toast('⚠️ '+e.message)}
+}
+window.vaultAction=vaultAction;
+// 账号页打开时刷新 vault 状态
+var _origOpenSub=window.openSub;
+if(typeof _origOpenSub==='function'){
+  window.openSub=function(id){_origOpenSub(id);if(id==='pg-account')vaultRefresh();};
+}
+vaultRefresh();
