@@ -9,6 +9,7 @@
  */
 
 import { applyBinding } from './binding.js';
+import { startRefresh, stopRefresh, createSkeleton, createErrorRetry } from './refresh.js';
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -155,12 +156,14 @@ export function renderPresetModule(m, grid) {
   card.appendChild(el('div', 'preset-title', m.title ?? ''));
 
   const body = el('div', 'preset-body');
-  body.appendChild(el('div', 'preset-loading', '⏳'));
+  createSkeleton(body);
   card.appendChild(body);
   grid.appendChild(card);
 
+  stopRefresh(m.id);
   fetchBound(m)
     .then((values) => {
+      startRefresh(m.id, () => renderPresetModule(m, grid), 30000);
       body.replaceChildren?.();
       const renderer = RENDERERS[m.kind] ?? RENDERERS.stat;
       body.appendChild(renderer(values, m));
@@ -186,8 +189,7 @@ export function renderPresetModule(m, grid) {
       }
     })
     .catch((error) => {
-      body.replaceChildren?.();
-      body.appendChild(el('div', 'preset-error', '⚠️ ' + (error.message ?? '加载失败')));
+      createErrorRetry(body, error.message ?? '加载失败', () => renderPresetModule(m, grid));
     });
 }
 

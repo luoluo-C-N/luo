@@ -51,3 +51,15 @@
 .preset-toggle-knob{width:24px;height:24px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;
   transition:transform .2s var(--ease-item);box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .preset-toggle.on .preset-toggle-knob{transform:translateX(20px)}
+
+/* 骨架屏 shimmer */
+.preset-skeleton{height:14px;border-radius:7px;margin:6px 0;
+  background:linear-gradient(90deg,var(--glass) 25%,var(--glass-strong) 50%,var(--glass) 75%);
+  background-size:200% 100%;animation:shimmer 1.2s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* 错误重试 */
+.preset-error-retry{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:8px 0;font-size:12px;color:var(--red)}
+.preset-retry-btn{padding:5px 12px;border-radius:10px;border:none;font-size:12px;font-weight:700;
+  background:var(--accent-soft);color:var(--accent);cursor:pointer;flex-shrink:0;font-family:inherit}
