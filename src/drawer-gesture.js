@@ -37,7 +37,7 @@ export function installDrawerGesture({
   function releasePointer() {
     if (!drag) return;
     try { surface.releasePointerCapture(drag.pointerId); } catch {}
-    surface.style.touchAction = '';
+    if (surface.style) surface.style.touchAction = '';
   }
 
   function pointerDown(event) {
@@ -46,7 +46,7 @@ export function installDrawerGesture({
     if (!canStart(event, progress)) return;
     // ★ 关键修复：在浏览器决定手势类型之前禁用 touch-action，
     //   防止 pointercancel 杀死抽屉拖拽（用户轻微斜滑就失败的根因）
-    surface.style.touchAction = 'none';
+    if (surface.style) surface.style.touchAction = 'none';
     drag = {
       pointerId: event.pointerId,
       x0: event.clientX,
