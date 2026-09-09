@@ -13,6 +13,7 @@
 
 | 项 | 状态 |
 |---|---|
+| v0.07 钱包模块 | wallet/store.js 收支加密记账 + 月度汇总 + 分类汇总 + 4 项测试 |
 | v0.06 密码模块 | password/store.js 加密 CRUD（vault AES-GCM）+ 5 项测试 |
 | v0.06 密码模块 | password/store.js 加密 CRUD（vault AES-GCM）+ 5 项测试 |
 | 阶段推进 | 15 阶段完成（自动刷新/骨架屏/错误重试/导入导出/remind骨架/暗色快捷/版本号/CSS审计/后端健康指示/模块计数/直达入口×3） |
@@ -20,6 +21,7 @@
 | 最新提交 | 见 `git log --oneline -5`（develop 分支，全部已推送） |
 | 可运行产物 | `release/kirameku-0.01-debug.apk`（debug 签名，v2 验证通过） |
 | 最新提交 | 见 git log（15+ commits pushed） |
+| 注册模块 | site + lab + password + wallet（4 模块） |
 | 测试 | `npm test` 全绿（69 项，含 4 项内核接线契约）· `npm run build` 65 资产 · `npm run smoke` 5 项 |
 | 后端契约 | `python tests/backend-contracts.py` 17/17（需 8011 隔离后端） |
 
@@ -61,7 +63,8 @@ src/ui/tokens.css  设计令牌单一事实源（有快照测试保护）
 3. **v0.03（剩余）**：vault 设置 UI（设置主密码/解锁/自动锁定开关）+ 收紧 cleartext 配置（准入条件见架构 §8.3）
 4. **v0.04**：lab 零代码绑定引擎——点选式字段选择器（ADR-0002），验收：零代码建「待审评论」模块 ≤60s
 5. **v0.05/v0.06**：album 图床 → password/wallet 敏感模块
-6. 小尾巴：`core/capabilities.js` 里 1 处硬编码地址（内核会话范围）；`掌上小站-v0.01-debug.apk` 旧产物可删
+6. 密码管理 UI 已就绪（pg-password 列表+添加+复制+删除）；钱包 UI 建设中（存储层已就绪）
+7. 小尾巴：`core/capabilities.js` 里 1 处硬编码地址（内核会话范围）；`掌上小站-v0.01-debug.apk` 旧产物可删
 
 ## 四、关键决策（详见 docs/ADR/）
 
