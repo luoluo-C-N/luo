@@ -15,7 +15,7 @@
 |---|---|
 | 最新提交 | 见 `git log --oneline -5`（develop 分支，全部已推送） |
 | 可运行产物 | `release/kirameku-0.01-debug.apk`（debug 签名，v2 验证通过） |
-| 测试 | `npm test` 全绿 · `npm run build` · `npm run smoke`（5 项） |
+| 测试 | `npm test` 全绿（69 项，含 4 项内核接线契约）· `npm run build` 65 资产 · `npm run smoke` 5 项 |
 | 后端契约 | `python tests/backend-contracts.py` 17/17（需 8011 隔离后端） |
 
 ### 已完成里程碑
@@ -25,6 +25,7 @@
 - ✅ **lab 迁出**：69 个函数迁入 `modules/lab/`
 - ✅ **T4.8**：`prototype.js` 已删除——状态入 `modules/{site,lab}/state.js`，启动初始化入 `src/boot/init.js`
 - ✅ **5 项真机 UX 修复**：安全区适配 / 免强制登录 / 抽屉易滑出 / 抽屉实色 / 页面不被拖飞
+- ✅ **v0.02 内核接线**：单入口 src/boot/kernel.js（静态导入 site/lab 暴露过渡层 → 动态启动内核登记模块建 ctx → 最后加载启动初始化）；内核失败仅降级内核能力
 - ✅ **仓库精简**：移除废弃脚本、旧原型快照、Capacitor 模板测试、迁移期死代码
 
 ### 架构速览
