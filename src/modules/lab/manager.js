@@ -44,7 +44,8 @@ export function refreshMyModules(){
   toast('模块数据已刷新');
 }
 
-export function openModManager(){closeDrawer();setTimeout(function(){renderClosedPanels();renderModList();renderExamples();renderFieldDict();openSub('pg-mods');},80);}
+export function openModManager(){closeDrawer();setTimeout(function(){renderClosedPanels();renderModList();renderExamples();renderFieldDict();updateModCount();openSub('pg-mods');},80);}
+function updateModCount(){try{var el=document.getElementById('modCount');if(el&&typeof customModules!=='undefined')el.textContent='('+customModules.length+' 个模块)';}catch(e){}}
 
 export function renderModList(){
   var l=document.getElementById('modList');if(!l)return;l.innerHTML='';

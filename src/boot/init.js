@@ -538,6 +538,13 @@ document.addEventListener('visibilitychange',function(){
   }
 });
 regPoll(fetchSystemStatus,15000);
+// 抽屉后端健康指示
+regPoll(function(){
+  var dot=document.getElementById('backendDot');var txt=document.getElementById('backendText');
+  if(!dot||!txt)return;
+  if(BACKEND_OK===true){dot.style.background='var(--green)';txt.textContent='后端已连接';}
+  else if(BACKEND_OK===false){dot.style.background='var(--red)';txt.textContent='后端离线';}
+},20000);
 regPoll(probeSvc,30000);
 regPoll(notifCheck,30000);
 fetch(API_BASE+'/api/system/services/restart',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},authHeaders()),body:JSON.stringify({port:0})})
