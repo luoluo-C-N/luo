@@ -6,7 +6,7 @@ var SUB_TOP=52;
 
 var drawerEl=null,maskEl=null,pageEl=null,phoneEl=null;
 if(typeof document!=='undefined'){
-  drawerEl=document.getElementById('drawer');maskEl=document.getElementById('mask');
+  drawerEl=document.getElementById('drawer');maskEl=document.getElementById('drawerMask');
   pageEl=document.querySelector('.screens');phoneEl=document.querySelector('.phone');
 }
 

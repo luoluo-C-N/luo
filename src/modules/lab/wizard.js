@@ -14,22 +14,22 @@ import { describePath, isSafePath, resolvePath, FORMATTERS, TRANSFORMS } from '.
 
 /** 七种形态：与 lab 模板渲染一一对应 */
 export const FORMS = [
-  { id: 'stat', name: '数值卡片', hint: '显示一个数字（文章数/待审数…）', suggest: ['number'] },
-  { id: 'status', name: '状态徽章', hint: '显示在线/离线等状态', suggest: ['enum', 'bool'] },
-  { id: 'progress', name: '进度条', hint: '显示百分比或占用', suggest: ['number'] },
-  { id: 'list', name: '文本列表', hint: '显示多条文本（最新评论…）', suggest: ['text'] },
-  { id: 'dynlist', name: '动态列表', hint: '列表项可点击跳转', suggest: ['text'] },
-  { id: 'chart', name: '图表', hint: '显示分布或趋势', suggest: ['number'] },
-  { id: 'toggle', name: '开关', hint: '一键切换某个布尔值', suggest: ['bool'] },
+  { id: 'stat', name: '数值卡片', icon: '📊', hint: '显示一个数字' },
+  { id: 'status', name: '状态徽章', icon: '🟢', hint: '在线/离线状态' },
+  { id: 'progress', name: '进度条', icon: '📊', hint: '百分比或占用' },
+  { id: 'list', name: '文本列表', icon: '📝', hint: '多条内容' },
+  { id: 'dynlist', name: '动态列表', icon: '🔗', hint: '可点击跳转' },
+  { id: 'chart', name: '图表', icon: '📈', hint: '分布或趋势' },
+  { id: 'toggle', name: '开关', icon: '🔄', hint: '切换布尔值' },
 ];
 
 /** 动作预设：绑定在列表项的按钮上（架构 §9.2 动作绑定） */
 export const ACTIONS = [
-  { id: 'none', name: '无', needId: false },
-  { id: 'approve', name: '通过', method: 'PUT', path: '/status', body: { status: 'approved' }, needId: true },
-  { id: 'reject', name: '拒绝', method: 'PUT', path: '/status', body: { status: 'rejected' }, needId: true },
-  { id: 'delete', name: '删除', method: 'DELETE', needId: true },
-  { id: 'togglePin', name: '置顶开关', method: 'PUT', body: { is_pinned: true }, needId: true },
+  { id: 'none', name: '不需要', needId: false },
+  { id: 'approve', name: '✓ 通过', method: 'PUT', path: '/status', body: { status: 'approved' }, needId: true },
+  { id: 'reject', name: '✕ 拒绝', method: 'PUT', path: '/status', body: { status: 'rejected' }, needId: true },
+  { id: 'delete', name: '🗑 删除', method: 'DELETE', needId: true },
+  { id: 'togglePin', name: '📌 置顶', method: 'PUT', body: { is_pinned: true }, needId: true },
 ];
 
 export const STEPS = ['形态', '数据源', '字段', '格式化', '动作'];
@@ -130,19 +130,27 @@ function el(tag, className, text) {
   return node;
 }
 
-/** 渲染当前步骤到容器；onChange 用回调驱动（不内联字符串脚本） */
+/** 渲染当前步骤到容器 */
 export function renderWizard(container, state, onChange) {
   if (!container) return;
   container.replaceChildren?.();
 
-  const head = el('div', 'wiz-head');
-  head.appendChild(el('div', 'wiz-title', `第 ${state.step + 1} / ${STEPS.length} 步 · ${STEPS[state.step]}`));
-  // 修复 #1：右上角关闭按钮（点 ✕ 直接退出向导）
+  // 关闭按钮
   const close = el('button', 'wiz-close', '✕');
-  close.setAttribute('aria-label', '关闭向导');
   close.addEventListener('click', () => onChange({ ...state, finished: true, cancelled: true }));
-  head.appendChild(close);
-  container.appendChild(head);
+  container.appendChild(close);
+
+  // 进度条
+  const progress = el('div', 'wiz-progress');
+  for (let i = 0; i < STEPS.length; i++) {
+    progress.appendChild(el('div', 'wiz-dot' + (i < state.step ? ' done' : i === state.step ? ' now' : '')));
+  }
+  container.appendChild(progress);
+
+  // 标题 + 引导语
+  const subs = { 0: '你想做一个什么样子？', 1: '数据从哪里来？', 2: '点一下你想显示的内容', 3: '怎么展示更好看？', 4: '要不要加个操作按钮？' };
+  container.appendChild(el('div', 'wiz-title', STEPS[state.step]));
+  container.appendChild(el('div', 'wiz-sub', subs[state.step] ?? ''));
 
   if (state.step === 0) renderForms(container, state, onChange);
   else if (state.step === 1) renderSources(container, state, onChange);
@@ -152,11 +160,12 @@ export function renderWizard(container, state, onChange) {
 
   const bar = el('div', 'wiz-bar');
   if (state.step > 0) {
-    const back = el('button', 'btn-save', '上一步');
+    const back = el('button', 'wiz-btn back', '←');
     back.addEventListener('click', () => onChange(prevStep(state)));
     bar.appendChild(back);
   }
-  const next = el('button', 'btn-save btn-pub', state.step === STEPS.length - 1 ? '完成' : '下一步');
+  const next = el('button', 'wiz-btn next' + (state.step === STEPS.length - 1 ? ' done' : ''),
+    state.step === STEPS.length - 1 ? '✓ 创建' : '下一步 →');
   next.disabled = !canAdvance(state);
   next.addEventListener('click', () => {
     if (state.step === STEPS.length - 1) onChange({ ...state, finished: true });
@@ -167,53 +176,60 @@ export function renderWizard(container, state, onChange) {
 }
 
 function renderForms(container, state, onChange) {
+  const grid = el('div', 'wiz-grid');
   for (const form of FORMS) {
-    const row = el('div', 'wiz-row' + (state.form === form.id ? ' on' : ''));
-    row.appendChild(el('div', 'wiz-name', form.name));
-    row.appendChild(el('div', 'wiz-hint', form.hint));
-    row.addEventListener('click', () => onChange({ ...state, form: form.id }));
-    container.appendChild(row);
+    const card = el('div', 'wiz-card' + (state.form === form.id ? ' on' : ''));
+    card.appendChild(el('div', 'wiz-icon', form.icon));
+    card.appendChild(el('div', 'wiz-name', form.name));
+    card.appendChild(el('div', 'wiz-hint', form.hint));
+    card.addEventListener('click', () => onChange({ ...state, form: form.id }));
+    grid.appendChild(card);
   }
+  container.appendChild(grid);
 }
 
 function renderSources(container, state, onChange) {
+  const list = el('div', 'wiz-list');
   for (const source of DATA_SOURCES) {
     const row = el('div', 'wiz-row' + (state.sourceId === source.id ? ' on' : ''));
     row.appendChild(el('div', 'wiz-name', source.name));
-    row.appendChild(el('div', 'wiz-hint', source.admin ? '需登录' : '公开'));
+    row.appendChild(el('div', 'wiz-hint', source.admin ? '需登录' : ''));
+    if (state.sourceId === source.id) row.appendChild(el('div', 'wiz-check', '✓'));
     row.addEventListener('click', () => {
       const next = { ...state, sourceId: source.id, path: null, sample: null };
       onChange(next);
       loadSample(next);
     });
-    container.appendChild(row);
+    list.appendChild(row);
   }
+  container.appendChild(list);
 }
 
-/** 字段步骤：优先点击「样例数据里的值」，其次点字段列表 */
 function renderFields(container, state, onChange) {
   const fields = suggestFields(state);
   if (Array.isArray(state.sample) && state.sample.length) {
-    container.appendChild(el('div', 'wiz-hint', '点一下样例里你想显示的那个值：'));
-    state.sample.slice(0, 5).forEach((row, index) => {
-      const line = el('div', 'wiz-sample');
+    container.appendChild(el('div', 'wiz-label', '点击你想显示的值'));
+    const box = el('div', 'wiz-sample-box');
+    box.appendChild(el('div', 'wiz-sample-title', '样例数据（前 5 条）'));
+    state.sample.slice(0, 5).forEach((row) => {
+      const line = el('div', 'wiz-sample-row');
       for (const { key } of fields) {
         const value = resolvePath(row, key);
         if (value === undefined || value === null || value === '') continue;
-        const chip = el('span', 'wiz-chip' + (state.path === key ? ' on' : ''), String(value).slice(0, 24));
-        chip.addEventListener('click', () => onChange(pickFromSample(state, index, key)));
+        const chip = el('span', 'wiz-chip' + (state.path === key ? ' on' : ''), String(value).slice(0, 20));
+        chip.addEventListener('click', () => onChange(pickFromSample(state, 0, key)));
         line.appendChild(chip);
       }
-      container.appendChild(line);
+      box.appendChild(line);
     });
-    if (state.path) {
-      const source = getSource(state.sourceId);
-      container.appendChild(el('div', 'wiz-picked', '已选：' + describePath(source, state.path)));
-    }
-  } else {
-    container.appendChild(el('div', 'wiz-hint', '（暂无样例数据，请从下方字段中选择）'));
+    container.appendChild(box);
   }
-  const list = el('div', 'wiz-fields');
+  if (state.path) {
+    const source = getSource(state.sourceId);
+    container.appendChild(el('div', 'wiz-picked', describePath(source, state.path)));
+  }
+  container.appendChild(el('div', 'wiz-label', '或从字段列表选择'));
+  const list = el('div', 'wiz-chips');
   for (const field of fields) {
     const chip = el('span', 'wiz-chip' + (state.path === field.key ? ' on' : ''), field.name);
     chip.addEventListener('click', () => onChange({ ...state, path: field.key }));
@@ -223,8 +239,8 @@ function renderFields(container, state, onChange) {
 }
 
 function renderFormat(container, state, onChange) {
-  container.appendChild(el('div', 'wiz-hint', '格式化'));
-  const fRow = el('div', 'wiz-fields');
+  container.appendChild(el('div', 'wiz-label', '格式化'));
+  const fRow = el('div', 'wiz-chips');
   for (const [id, f] of Object.entries(FORMATTERS)) {
     const chip = el('span', 'wiz-chip' + (state.formatter === id ? ' on' : ''), f.name);
     chip.addEventListener('click', () => onChange({ ...state, formatter: id }));
@@ -232,8 +248,8 @@ function renderFormat(container, state, onChange) {
   }
   container.appendChild(fRow);
 
-  container.appendChild(el('div', 'wiz-hint', '变换'));
-  const tRow = el('div', 'wiz-fields');
+  container.appendChild(el('div', 'wiz-label', '数据处理'));
+  const tRow = el('div', 'wiz-chips');
   for (const [id, t] of Object.entries(TRANSFORMS)) {
     const chip = el('span', 'wiz-chip' + (state.transform === id ? ' on' : ''), t.name);
     chip.addEventListener('click', () => onChange({ ...state, transform: id }));
@@ -243,16 +259,17 @@ function renderFormat(container, state, onChange) {
 }
 
 function renderActions(container, state, onChange) {
-  container.appendChild(el('div', 'wiz-hint', '给列表项加一个按钮（可选）'));
-  const row = el('div', 'wiz-fields');
+  container.appendChild(el('div', 'wiz-label', '列表项操作按钮'));
+  const row = el('div', 'wiz-chips');
   for (const action of ACTIONS) {
     const chip = el('span', 'wiz-chip' + (state.action === action.id ? ' on' : ''), action.name);
     chip.addEventListener('click', () => onChange({ ...state, action: action.id }));
     row.appendChild(chip);
   }
   container.appendChild(row);
+  container.appendChild(el('div', 'wiz-label', '模块名称'));
   const name = el('input', 'wiz-input');
-  name.placeholder = '模块名称（可留空）';
+  name.placeholder = '给模块起个名字（可留空）';
   name.value = state.title ?? '';
   name.addEventListener('input', () => onChange({ ...state, title: name.value }));
   container.appendChild(name);

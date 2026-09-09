@@ -1,20 +1,88 @@
-/* lab 模块私有样式（零代码向导 + 模块管理） */
-.wizard-host{position:absolute;left:12px;right:12px;bottom:96px;top:88px;z-index:80;border-radius:20px;
-  background:rgba(250,252,255,.97);border:1px solid var(--glass-border);box-shadow:0 20px 50px rgba(28,28,30,.20);
-  padding:14px;overflow-y:auto;backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)}
-.phone.dark .wizard-host{background:rgba(26,28,36,.97)}
+/* lab 模块私有样式（零代码向导 + 模块管理）
+ * 设计语言：与主页毛玻璃一致；强调用 accent-soft 而非大面积实色 */
+.wizard-host{position:absolute;left:0;right:0;top:0;bottom:0;z-index:80;
+  background:rgba(234,240,250,.92);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+  padding:calc(16px + var(--safe-top,0px)) 16px calc(16px + var(--safe-bottom,0px));
+  overflow-y:auto;animation:wizIn .28s var(--ease-item)}
+.phone.dark .wizard-host{background:rgba(24,26,34,.94)}
+@keyframes wizIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .wizard-host:empty{display:none}
-.wiz-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.wiz-title{font-size:14px;font-weight:750;color:var(--ink)}
-.wiz-hint{font-size:12px;color:var(--ink-3);margin:8px 0 6px;line-height:1.5}
-.wiz-row{padding:12px 14px;border-radius:14px;background:var(--glass);border:1px solid var(--glass-border);margin-bottom:8px;cursor:pointer}
-.wiz-row.on{background:var(--accent-soft);border-color:var(--accent)}
-.wiz-name{font-size:14px;font-weight:700;color:var(--ink)}
-.wiz-fields{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.wiz-chip{padding:6px 12px;border-radius:16px;font-size:12.5px;font-weight:650;
-  background:var(--glass);border:1px solid var(--glass-border);color:var(--ink-2);cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 步骤进度条 */
+.wiz-progress{display:flex;gap:6px;margin-bottom:16px}
+.wiz-dot{flex:1;height:4px;border-radius:2px;background:var(--glass-border);transition:background .3s}
+.wiz-dot.done{background:var(--accent)}
+.wiz-dot.now{background:var(--accent);opacity:.5}
+
+/* 步骤标题 */
+.wiz-title{font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-.3px}
+.wiz-sub{font-size:13px;color:var(--ink-2);margin-bottom:18px;line-height:1.5}
+
+/* 形态选择卡片（两列网格 + 图标） */
+.wiz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.wiz-card{padding:16px 14px;border-radius:18px;background:var(--card);border:1.5px solid transparent;cursor:pointer;
+  transition:transform .15s ease,border-color .2s,background .2s;user-select:none;-webkit-user-select:none}
+.wiz-card:active{transform:scale(.97)}
+.wiz-card.on{border-color:var(--accent);background:var(--accent-soft)}
+.wiz-icon{font-size:28px;margin-bottom:8px;line-height:1}
+.wiz-card .wiz-name{font-size:14px;font-weight:750;color:var(--ink);margin-bottom:3px}
+.wiz-card .wiz-hint{font-size:11.5px;color:var(--ink-3);line-height:1.4}
+
+/* 通用选项行（数据源/格式化/变换/动作） */
+.wiz-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.wiz-row{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:14px;
+  background:var(--card);border:1.5px solid transparent;cursor:pointer;transition:border-color .2s,background .2s}
+.wiz-row:active{transform:scale(.98)}
+.wiz-row.on{border-color:var(--accent);background:var(--accent-soft)}
+.wiz-row .wiz-name{font-size:14px;font-weight:650;color:var(--ink);flex:1}
+.wiz-row .wiz-hint{font-size:12px;color:var(--ink-3)}
+.wiz-row .wiz-check{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+
+/* 字段点选 */
+.wiz-label{font-size:12px;font-weight:700;color:var(--ink-2);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+.wiz-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.wiz-chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:650;
+  background:var(--card);border:1.5px solid var(--glass-border);color:var(--ink-2);cursor:pointer;
+  transition:all .15s;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wiz-chip:active{transform:scale(.95)}
 .wiz-chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-.wiz-sample{padding:8px 10px;border-radius:12px;background:var(--card);margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px}
-.wiz-picked{font-size:12.5px;font-weight:700;color:var(--accent);margin:8px 0}
-.wiz-input{width:100%;margin-top:10px;padding:11px 12px;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-strong);color:var(--ink);font-size:16px}
-.wiz-bar{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+
+/* 样例数据预览 */
+.wiz-sample-box{background:var(--card);border-radius:14px;padding:12px;margin-bottom:14px;border:1px solid var(--glass-border)}
+.wiz-sample-title{font-size:11px;color:var(--ink-3);margin-bottom:8px;font-weight:650}
+.wiz-sample-row{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0;border-bottom:1px solid var(--hairline)}
+.wiz-sample-row:last-child{border-bottom:none}
+
+/* 已选指示 */
+.wiz-picked{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;
+  background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700;margin:8px 0}
+.wiz-picked::before{content:'✓';font-size:14px}
+
+/* 输入框 */
+.wiz-input{width:100%;margin-top:12px;padding:13px 14px;border-radius:14px;border:1.5px solid var(--glass-border);
+  background:var(--card);color:var(--ink);font-size:16px;outline:none;transition:border-color .2s}
+.wiz-input:focus{border-color:var(--accent)}
+
+/* 底部按钮栏 */
+.wiz-bar{display:flex;gap:10px;margin-top:20px;position:sticky;bottom:0;padding:12px 0;
+  background:linear-gradient(transparent,var(--bg) 30%)}
+.wiz-btn{flex:1;padding:14px;border-radius:16px;border:none;font-size:15px;font-weight:750;cursor:pointer;
+  transition:transform .12s,opacity .2s;font-family:inherit}
+.wiz-btn:active{transform:scale(.97)}
+.wiz-btn.back{background:var(--glass);color:var(--ink-2);flex:0.6}
+.wiz-btn.next{background:var(--accent);color:#fff}
+.wiz-btn.next:disabled{opacity:.4;cursor:not-allowed}
+.wiz-btn.done{background:var(--green);color:#fff}
+
+/* 关闭按钮 */
+.wiz-close{position:absolute;top:calc(12px + var(--safe-top,0px));right:14px;width:36px;height:36px;
+  border-radius:50%;border:none;background:var(--glass);color:var(--ink-2);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;z-index:2;transition:background .2s}
+.wiz-close:active{background:var(--accent-soft)}
+
+/* 完成态 */
+.wiz-done{text-align:center;padding:60px 20px}
+.wiz-done-icon{font-size:56px;margin-bottom:16px}
+.wiz-done-title{font-size:20px;font-weight:800;color:var(--ink);margin-bottom:8px}
+.wiz-done-sub{font-size:14px;color:var(--ink-2);line-height:1.6}
