@@ -49,4 +49,24 @@ export function importModule(json) {
   return clean;
 }
 
-export const __exports__ = { exportModule, importModule };
+export const __exports__ = { exportModule, importModule, exportBackup, importBackup };
+
+/** 全量数据备份导出 */
+export function exportBackup(data) {
+  return JSON.stringify({
+    version: 1,
+    timestamp: new Date().toISOString(),
+    app: 'kirameku-pocket',
+    data,
+  }, null, 2);
+}
+
+/** 全量数据备份导入 */
+export function importBackup(json) {
+  const parsed = JSON.parse(json);
+  if (parsed.app !== 'kirameku-pocket') throw new Error('不是本应用的备份文件');
+  if (!parsed.data || typeof parsed.data !== 'object') throw new Error('备份数据为空');
+  return parsed.data;
+}
+
+export const __exports_backup__ = { exportBackup, importBackup };
