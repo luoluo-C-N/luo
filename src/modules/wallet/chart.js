@@ -1,6 +1,7 @@
 /**
- * wallet · 图表渲染（v0.41-45）
- * 月度支出柱状图 + 分类饼图数据 + 趋势箭头
+ * wallet · 图表渲染（v0.3.0 钱包完善）
+ *
+ * 月度支出柱状图 + 分类占比条形图 + 趋势箭头
  */
 function el(tag, cls, text) {
   const n = document.createElement(tag);
@@ -28,9 +29,28 @@ export function renderMonthlyChart(container, monthlyData) {
   container.appendChild(bars);
 }
 
+/** 分类占比水平条形图 */
+export function renderCategoryBars(container, categories) {
+  if (!container) return;
+  container.replaceChildren?.();
+  container.appendChild(el('div', 'wiz-label', '支出分类占比'));
+  const max = Math.max(...categories.map((c) => c.total), 1);
+  for (const c of categories.slice(0, 8)) {
+    const row = el('div', 'wallet-cat-bar-row');
+    row.appendChild(el('span', 'wallet-cat-bar-label', c.category));
+    const barWrap = el('div', 'wallet-cat-bar-wrap');
+    const bar = el('div', 'wallet-cat-bar');
+    bar.style.width = Math.max(4, Math.round((c.total / max) * 100)) + '%';
+    barWrap.appendChild(bar);
+    row.appendChild(barWrap);
+    row.appendChild(el('span', 'wallet-cat-bar-amt', '¥' + c.total.toFixed(0)));
+    container.appendChild(row);
+  }
+}
+
 /** 趋势箭头（对比上月） */
 export function trendArrow(current, previous) {
-  if (!previous) return { arrow: '', text: '无上月数据', color: 'var(--ink-3)' };
+  if (!previous) return { arrow: '', text: '首月', color: 'var(--ink-3)' };
   const diff = current - previous;
   const pct = previous > 0 ? Math.round((diff / previous) * 100) : 0;
   if (diff > 0) return { arrow: '↑', text: `+${pct}%`, color: 'var(--red)' };
@@ -38,4 +58,4 @@ export function trendArrow(current, previous) {
   return { arrow: '→', text: '持平', color: 'var(--ink-3)' };
 }
 
-export const __exports__ = { renderMonthlyChart, trendArrow };
+export const __exports__ = { renderMonthlyChart, renderCategoryBars, trendArrow };

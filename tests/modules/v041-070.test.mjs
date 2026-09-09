@@ -9,7 +9,7 @@ test('v0.41-45 图表：趋势箭头方向正确', () => {
   assert.equal(trendArrow(150, 100).arrow, '↑');
   assert.equal(trendArrow(80, 100).arrow, '↓');
   assert.equal(trendArrow(100, 100).arrow, '→');
-  assert.equal(trendArrow(100, 0).text, '无上月数据');
+  assert.equal(trendArrow(100, 0).text, '首月');
 });
 
 test('v0.51-55 密码强度：弱/中/强', () => {

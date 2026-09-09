@@ -34,7 +34,7 @@ export async function renderWallet(container) {
   }
 
   const { loadEntries, monthlySummary, categorySummary } = await import('./store.js');
-  const { renderMonthlyChart, trendArrow } = await import('./chart.js');
+  const { renderMonthlyChart, renderCategoryBars, trendArrow } = await import('./chart.js');
   const entries = await loadEntries(ctx);
   const now = new Date();
   const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -87,13 +87,7 @@ export async function renderWallet(container) {
   // 分类占比（支出）
   const cats = categorySummary(entries, 'expense');
   if (cats.length) {
-    container.appendChild(el('div', 'wiz-label', '本月支出分类'));
-    for (const c of cats) {
-      const row = el('div', 'wallet-cat-row');
-      row.appendChild(el('span', '', c.category));
-      row.appendChild(el('span', 'wallet-cat-amt', '¥' + c.total.toFixed(2)));
-      container.appendChild(row);
-    }
+    renderCategoryBars(container, cats);
   }
 
   // 最近条目
