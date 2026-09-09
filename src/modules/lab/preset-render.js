@@ -10,6 +10,9 @@
 
 import { applyBinding } from './binding.js';
 import { startRefresh, stopRefresh, createSkeleton, createErrorRetry } from './refresh.js';
+import { createRateLimiter } from './perf.js';
+
+const apiLimiter = createRateLimiter(60, 60000); // 每分钟 60 次
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -20,6 +23,7 @@ function el(tag, className, text) {
 
 /** 拉取模块数据并应用绑定，返回格式化后的值/数组 */
 async function fetchBound(m) {
+  if (!apiLimiter.check()) throw new Error('请求过于频繁，请稍后再试');
   const base = globalThis.API_BASE ?? '';
   const url = base + (m.data.api ?? '');
   const fetcher = globalThis.jfetch ?? globalThis.fetch;

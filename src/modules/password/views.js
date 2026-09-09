@@ -157,7 +157,7 @@ async function copyPassword(pw) {
   }
 }
 
-/** 显示新增表单 */
+/** 显示新增表单（含密码生成器 + 强度条） */
 function showAddForm(container, ctx) {
   const old = container.querySelector?.('.pw-form');
   if (old) { old.remove(); return; }
@@ -166,7 +166,6 @@ function showAddForm(container, ctx) {
   const fields = [
     { key: 'title', placeholder: '标题 *', type: 'text' },
     { key: 'username', placeholder: '用户名', type: 'text' },
-    { key: 'password', placeholder: '密码 *', type: 'password' },
     { key: 'url', placeholder: '网址', type: 'url' },
     { key: 'notes', placeholder: '备注', type: 'text' },
   ];
@@ -178,21 +177,68 @@ function showAddForm(container, ctx) {
     inputs[f.key] = input;
     form.appendChild(input);
   }
-  const save = el('button', 'pw-btn pw-save', '保存');
+
+  // 密码输入 + 生成器按钮
+  const pwRow = el('div', 'pw-pw-row');
+  const pwInput = el('input', 'pw-input');
+  pwInput.type = 'password';
+  pwInput.placeholder = '密码 *（或点生成）';
+  inputs.password = pwInput;
+  pwRow.appendChild(pwInput);
+  const genBtn = el('button', 'pw-gen-btn', '🎲');
+  genBtn.title = '生成强密码';
+  genBtn.addEventListener('click', async () => {
+    const { generatePassword } = await import('./generator.js');
+    pwInput.value = generatePassword(16);
+    pwInput.type = 'text';
+    updateStrength(pwInput.value);
+  });
+  pwRow.appendChild(genBtn);
+  form.appendChild(pwRow);
+
+  // 强度条
+  const strengthBar = el('div', 'pw-strength');
+  const strengthFill = el('div', 'pw-strength-fill');
+  const strengthText = el('span', 'pw-strength-text', '');
+  strengthBar.appendChild(strengthFill);
+  strengthBar.appendChild(strengthText);
+  form.appendChild(strengthBar);
+
+  pwInput.addEventListener('input', () => updateStrength(pwInput.value));
+
+  function updateStrength(pw) {
+    import('./strength.js').then(({ checkStrength }) => {
+      const s = checkStrength(pw);
+      strengthFill.style.width = Math.min(100, (s.score / 7) * 100) + '%';
+      strengthFill.style.background = s.color;
+      strengthText.textContent = pw ? s.label : '';
+      strengthText.style.color = s.color;
+    });
+  }
+
+  // 分类
+  const catInput = el('input', 'pw-input');
+  catInput.placeholder = '分类（如：开发/金融/默认）';
+  inputs.category = catInput;
+  form.appendChild(catInput);
+
+  const save = el('button', 'pw-btn pw-save', '🔒 加密保存');
   save.addEventListener('click', async () => {
-    if (!inputs.title.value || !inputs.password.value) {
+    if (!inputs.title.value || !pwInput.value) {
       if (typeof window?.toast === 'function') window.toast('标题和密码为必填');
       return;
     }
     const { addEntry } = await import('./store.js');
+    const { sanitizeInput } = await import('../lab/perf.js');
     await addEntry(ctx, {
-      title: inputs.title.value,
+      title: sanitizeInput(inputs.title.value, 100),
       username: inputs.username.value,
-      password: inputs.password.value,
+      password: pwInput.value,
       url: inputs.url.value,
-      notes: inputs.notes.value,
+      notes: sanitizeInput(inputs.notes.value, 300),
+      category: sanitizeInput(inputs.category.value, 50) || '默认',
     });
-    if (typeof window?.toast === 'function') window.toast('已保存（加密）');
+    if (typeof window?.toast === 'function') window.toast('已加密保存');
     renderPasswordList(container);
   });
   form.appendChild(save);

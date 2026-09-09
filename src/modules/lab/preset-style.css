@@ -89,3 +89,34 @@
 .notif-title{font-size:14px;font-weight:700;color:var(--ink)}
 .notif-body{font-size:12.5px;color:var(--ink-2);margin-top:4px}
 .notif-mark{margin-top:8px;padding:4px 12px;border-radius:8px;border:none;background:var(--accent-soft);color:var(--accent);font-size:11px;font-weight:650;cursor:pointer;font-family:inherit}
+
+/* 密码模块增强 */
+.pw-pw-row{display:flex;gap:8px;align-items:center}
+.pw-pw-row .pw-input{flex:1}
+.pw-gen-btn{width:44px;height:44px;border-radius:12px;border:1px solid var(--glass-border);
+  background:var(--glass);font-size:18px;cursor:pointer;flex-shrink:0;font-family:inherit}
+.pw-gen-btn:active{background:var(--accent-soft)}
+.pw-strength{height:4px;border-radius:2px;background:var(--glass);margin:-4px 0 10px;overflow:hidden;position:relative}
+.pw-strength-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+.pw-strength-text{position:absolute;right:0;top:-18px;font-size:11px;font-weight:700}
+.pw-search{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--glass-border);
+  background:var(--glass-strong);color:var(--ink);font-size:16px;margin-bottom:10px}
+.pw-add{margin-bottom:12px}
+.pw-card{padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--glass-border);margin-bottom:8px}
+.pw-card-title{font-size:14px;font-weight:750;color:var(--ink)}
+.pw-card-user{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.pw-card-url{font-size:11px;color:var(--ink-3);margin-top:2px}
+.pw-actions{display:flex;gap:6px;margin-top:8px}
+.pw-action-btn{padding:5px 10px;border-radius:8px;border:none;font-size:11px;font-weight:650;
+  background:var(--accent-soft);color:var(--accent);cursor:pointer;font-family:inherit}
+.pw-action-btn.pw-del{background:rgba(255,69,58,.12);color:var(--red)}
+.pw-btn{width:100%;padding:12px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.pw-btn.pw-save{background:var(--accent);color:#fff}
+.pw-btn.pw-add{background:var(--accent-soft);color:var(--accent)}
+.pw-locked{text-align:center;padding:40px 20px;color:var(--ink-3);font-size:14px;margin-bottom:10px}
+.pw-empty{text-align:center;padding:20px;color:var(--ink-3);font-size:13px}
+.pw-form{margin-bottom:14px}
+.pw-input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--glass-border);
+  background:var(--glass-strong);color:var(--ink);font-size:16px;margin-bottom:8px}
+.pw-input:focus{border-color:var(--accent);outline:none}
+.pw-search:focus{border-color:var(--accent);outline:none}

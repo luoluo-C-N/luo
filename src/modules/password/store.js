@@ -42,6 +42,7 @@ export async function addEntry(ctx, entry) {
     password: entry.password ?? '',
     url: entry.url ?? '',
     notes: entry.notes ?? '',
+    category: entry.category ?? '默认',
     created_at: new Date().toISOString(),
   };
   entries.push(item);
