@@ -44,7 +44,7 @@ export function refreshMyModules(){
   toast('模块数据已刷新');
 }
 
-export function openModManager(){closeDrawer();renderClosedPanels();renderModList();renderExamples();renderFieldDict();openSub('pg-mods');}
+export function openModManager(){closeDrawer();setTimeout(function(){renderClosedPanels();renderModList();renderExamples();renderFieldDict();openSub('pg-mods');},80);}
 
 export function renderModList(){
   var l=document.getElementById('modList');if(!l)return;l.innerHTML='';
