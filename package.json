@@ -9,7 +9,9 @@
     "smoke": "node scripts/smoke-with-server.mjs",
     "build": "node scripts/build.mjs",
     "test:e2e": "playwright test",
-    "android:sync": "npm run build && cap sync android"
+    "android:sync": "npm run build && cap sync android",
+    "test:contract": "python tests/backend-contracts.py",
+    "backend:start": "python scripts/test-backend.py"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

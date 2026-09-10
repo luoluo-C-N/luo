@@ -7,12 +7,16 @@ assert Path(fixture['database']).resolve().is_relative_to((ROOT / 'artifacts/tes
 BASE = fixture['baseUrl']
 assert BASE == 'http://127.0.0.1:8011'
 results = []
+# 本地回环地址必须绕过代理：环境若设了 HTTP_PROXY，请求 127.0.0.1 会被代理
+# 拦截并返回 502/WinError 10061（表现为 "Fixture login failed"，实为环境问题非代码缺陷）
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
 def request(method, path, data=None, token=None, content_type='application/json'):
     headers = {'Content-Type': content_type}
     if token: headers['Authorization'] = 'Bearer ' + token
     body = json.dumps(data).encode() if data is not None and content_type == 'application/json' else data
     try:
-        with urllib.request.urlopen(urllib.request.Request(BASE + path, data=body, headers=headers, method=method), timeout=20) as r:
+        with _OPENER.open(urllib.request.Request(BASE + path, data=body, headers=headers, method=method), timeout=20) as r:
             raw = r.read()
             return r.status, json.loads(raw) if r.headers.get('Content-Type','').startswith('application/json') else raw
     except urllib.error.HTTPError as e:
