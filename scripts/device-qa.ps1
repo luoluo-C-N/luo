@@ -12,7 +12,13 @@ $adb = Join-Path $projectRoot 'tools/android-sdk/platform-tools/adb.exe'
 $package = 'cn.kirameku.pocket'
 $activity = "$package/.MainActivity"
 $artifactRoot = Join-Path $projectRoot 'artifacts/device-qa'
-$apk = Join-Path $projectRoot 'release/掌上小站-v0.01-debug.apk'
+# 自动选取 release 下最新的 APK：避免版本升号后脚本引用旧文件名而失效
+# （原为硬编码 'release/掌上小站-v0.01-debug.apk'，随版本迭代已不存在）
+$releaseDir = Join-Path $projectRoot 'release'
+$apk = Get-ChildItem -LiteralPath $releaseDir -Filter '*.apk' -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1 -ExpandProperty FullName
+if (!$apk) { throw "release/ 目录下未找到任何 .apk，请先构建：npm run android:sync + gradle assembleDebug" }
 
 if (!(Test-Path -LiteralPath $adb)) { throw "ADB not found: $adb" }
 New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
