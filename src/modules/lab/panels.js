@@ -1,6 +1,13 @@
 /** lab/panels —— 自定义面板/区块/布局预设/拖拽 */
 /* 逐字迁移自 src/prototype.js（步骤 S-LAB）；行为变更需走评审。 */
 
+/** HTML 转义（防御 XSS）：任何拼进 innerHTML 的动态数据必须先过这里 */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function saveSections(){try{localStorage.setItem('panelSections',JSON.stringify(PANEL_SECTIONS));}catch(e){}}
 
 export function addRealSection(pk){
@@ -33,7 +40,7 @@ export function renderClosedPanels(){
   closed.forEach(function(k){
     var p=panels[k];
     var r=document.createElement('div');r.className='mod-row';
-    r.innerHTML='<div class="ic" style="background:'+p.bg+'">'+p.icon+'</div><div class="tx"><b>'+esc(p.name)+'</b><span>已关闭 · 恢复后回到面板列表</span></div><button class="mini-btn" style="margin-left:auto;color:var(--accent);border-color:rgba(var(--accent-rgb),.35)" onclick="restorePanel(\''+k+'\')">恢复</button>';
+    r.innerHTML='<div class="ic" style="background:'+esc(p.bg)+'">'+esc(p.icon)+'</div><div class="tx"><b>'+esc(p.name)+'</b><span>已关闭 · 恢复后回到面板列表</span></div><button class="mini-btn" style="margin-left:auto;color:var(--accent);border-color:rgba(var(--accent-rgb),.35)" onclick="restorePanel(\''+esc(k)+'\')">恢复</button>';
     l.appendChild(r);
   });
 }
@@ -48,7 +55,7 @@ export function ensureCustomScreen(key,name,icon){
   var id='scr-'+key;
   if(document.getElementById(id))return id;
   var s=document.createElement('div');s.className='screen';s.id=id;
-  s.innerHTML='<div class="page-head"><div class="nav-title">'+esc(name)+'</div><button class="page-fab" onclick="openAddFor(\''+key+'\')">＋</button></div>'+
+  s.innerHTML='<div class="page-head"><div class="nav-title">'+esc(name)+'</div><button class="page-fab" onclick="openAddFor(\''+esc(key)+'\')">＋</button></div>'+
     '<div class="nav-sub">'+icon+' 自定义面板 · 自由组合模块与分区</div>'+
     '<div class="section-title">自定义模块 <span class="more" onclick="openAddFor(\''+key+'\')">＋ 添加</span></div>'+
     '<div class="mod-grid" id="mods-'+key+'"></div>'+

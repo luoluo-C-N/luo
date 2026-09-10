@@ -53,11 +53,28 @@ export function imgSrc(u) {
  * 统一请求：自动带认证头；401/403 映射为可读文案；混合包装交由 unwrap 处理。
  * 逐字迁移自 prototype.js（除 authHeaders 注入点）。
  */
+/** 默认请求超时（毫秒）——移动端弱网/断网时避免请求无限挂起卡死 UI */
+export const DEFAULT_TIMEOUT = 15000;
+
 export function jfetch(url, opts) {
   opts = opts || {};
   if (!(opts.body instanceof FormData)) opts.headers = Object.assign({ 'Content-Type': 'application/json' }, authHeaders(), opts.headers || {});
   else opts.headers = Object.assign({}, authHeaders(), opts.headers || {});
+
+  /* ★ BUG 修复：请求超时控制（AbortController）
+     之前无超时 → 弱网/断网时 fetch 永久 pending → UI 永久卡在 loading 态 */
+  var timeoutMs = typeof opts.timeout === 'number' ? opts.timeout : DEFAULT_TIMEOUT;
+  var controller = typeof AbortController === 'function' ? new AbortController() : null;
+  var timer = 0;
+  if (controller) {
+    opts.signal = controller.signal;
+    timer = setTimeout(function () { controller.abort(); }, timeoutMs);
+  }
+
+  function clear() { if (timer) clearTimeout(timer); }
+
   return fetch(url, opts).then(function (r) {
+    clear();
     return r.text().then(function (t) {
       var j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {}
       if (!r.ok) {
@@ -68,6 +85,18 @@ export function jfetch(url, opts) {
       }
       return j;
     });
+  }, function (e) {
+    clear();
+    /* 超时/中断统一转换为友好错误，避免 'The user aborted a request' 之类的原始报错 */
+    if (e && (e.name === 'AbortError' || /abort/i.test(String(e.message || e.name)))) {
+      var te = new Error('请求超时（' + Math.round(timeoutMs / 1000) + 's）· 请检查网络或后端地址');
+      te.status = 0; te.timeout = true; throw te;
+    }
+    if (e instanceof TypeError || /Failed to fetch|NetworkError|Network request failed/i.test(String(e && e.message))) {
+      var ne = new Error('网络连接失败 · 请检查后端地址与网络');
+      ne.status = 0; ne.network = true; throw ne;
+    }
+    throw e;
   });
 }
 

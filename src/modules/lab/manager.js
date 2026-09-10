@@ -1,6 +1,13 @@
 /** lab/manager —— 模块管理：示例库/我的模块/增删改复制 */
 /* 逐字迁移自 src/prototype.js（步骤 S-LAB）；行为变更需走评审。 */
 
+/** HTML 转义（防御 XSS）：任何拼进 innerHTML 的动态数据必须先过这里 */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function openModLib(){
   closeSub('pg-mod-editor');
   openSub('pg-lib');
@@ -73,7 +80,7 @@ export function renderExamples(){
   var l=document.getElementById('exampleList');if(!l)return;l.innerHTML='';
   EXAMPLES.forEach(function(ex,i){
     var c=document.createElement('div');c.className='ex-card';
-    c.innerHTML='<div class="ic">'+ex.icon+'</div><div><b>'+ex.name+'</b><span>'+ex.desc+'</span></div><span class="add">＋ 添加</span>';
+    c.innerHTML='<div class="ic">'+esc(ex.icon)+'</div><div><b>'+esc(ex.name)+'</b><span>'+esc(ex.desc)+'</span></div><span class="add">＋ 添加</span>';
     c.onclick=function(){addExample(i);};
     l.appendChild(c);
   });
@@ -92,7 +99,7 @@ export function newModuleFlow(){
   var pn=presetPanel||'site';
   var b=document.getElementById('edBody');
   document.getElementById('edTitle').textContent='新建模块';
-  b.innerHTML='<div class="card" style="padding:14px 18px"><div style="font-size:13px;color:var(--ink-2);line-height:1.6">选择创建方式：「模板模式」选好形态、绑上数据即可用；「代码模式」用 HTML/CSS/JS 自由编写，可接入任意开放接口，理论上限 = 你能写出什么。<b>将添加到「'+panels[pn].name+'」面板</b>，稍后可在编辑器里更改所属面板。</div></div>'+
+  b.innerHTML='<div class="card" style="padding:14px 18px"><div style="font-size:13px;color:var(--ink-2);line-height:1.6">选择创建方式：「模板模式」选好形态、绑上数据即可用；「代码模式」用 HTML/CSS/JS 自由编写，可接入任意开放接口，理论上限 = 你能写出什么。<b>将添加到「'+esc(panels[pn].name)+'」面板</b>，稍后可在编辑器里更改所属面板。</div></div>'+
     '<div class="tpl-grid" style="margin-top:12px">'+
     '<div class="tpl-card" onclick="startEditor(\'tpl\')"><div class="ti">🧩</div><div class="tx">模板模式</div><div class="ds">7 种形态 · 绑数据即用</div></div>'+
     '<div class="tpl-card" onclick="startEditor(\'code\')"><div class="ti">⌨️</div><div class="tx">代码模式</div><div class="ds">HTML/CSS/JS · 理论无限</div></div>'+

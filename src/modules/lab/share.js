@@ -1,6 +1,13 @@
 /** lab/share —— 分享码导入导出 + 字段字典 */
 /* 逐字迁移自 src/prototype.js（步骤 S-LAB）；行为变更需走评审。 */
 
+/** HTML 转义（防御 XSS）：任何拼进 innerHTML 的动态数据必须先过这里 */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function b64enc(obj){return btoa(unescape(encodeURIComponent(JSON.stringify(obj))));}
 
 export function b64dec(s){return JSON.parse(decodeURIComponent(escape(atob(s))));}
@@ -8,7 +15,7 @@ export function b64dec(s){return JSON.parse(decodeURIComponent(escape(atob(s))))
 export function showShareModal(title,bodyHtml){
   var old=document.getElementById('shareModal');if(old)old.remove();
   var ov=document.createElement('div');ov.id='shareModal';
-  ov.innerHTML='<div class="sh-box"><div class="sh-title">'+title+'</div>'+bodyHtml+'</div>';
+  ov.innerHTML='<div class="sh-box"><div class="sh-title">'+esc(title)+'</div>'+esc(bodyHtml)+'</div>';
   document.querySelector('.phone').appendChild(ov);
   ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
   return ov;
@@ -48,7 +55,7 @@ export function renderFieldDict(){
   Object.keys(FIELDS).forEach(function(k){
     var f=FIELDS[k];
     var r=document.createElement('div');r.className='mod-row';
-    r.innerHTML='<div class="ic" style="background:linear-gradient(135deg,var(--accent2),var(--accent))">'+(f.unit||'f')+'</div><div class="tx"><b>'+f.name+'</b><span>key: '+k+' · '+descs[k]+'</span></div>';
+    r.innerHTML='<div class="ic" style="background:linear-gradient(135deg,var(--accent2),var(--accent))">'+esc(f.unit||'f')+'</div><div class="tx"><b>'+esc(f.name)+'</b><span>key: '+esc(k)+' · '+esc(descs[k])+'</span></div>';
     l.appendChild(r);
   });
 }

@@ -1,6 +1,13 @@
 /** theme/rename —— 重命名体系：导航/面板/区块（S7） */
 /* 逐字迁移自 src/prototype.js（步骤 S7）；行为变更需走评审。 */
 
+/** HTML 转义（防御 XSS） */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function rnNavName(bar,scr){var g=renameStore.nav[bar]||{};return g[scr]||(NAV_DEF[bar].filter(function(p){return p[0]===scr;})[0]||['',''])[1];}
 
 export function rnPanelName(k){return (renameStore.panel&&renameStore.panel[k])||PANEL_DEF[k];}
@@ -74,13 +81,13 @@ export function renderRenamePage(){
     var st=document.createElement('div');st.className='section-title';st.textContent=title;b.appendChild(st);
     var c=document.createElement('div');c.className='card rn-group';b.appendChild(c);
     var head=document.createElement('div');head.className='grp-head';
-    head.innerHTML='<div class="grp-ic" style="background:'+bg+'">'+icon+'</div><div class="grp-tx"><b>'+title.split(' · ')[0]+'</b><span>'+sub+'</span></div>';
+    head.innerHTML='<div class="grp-ic" style="background:'+esc(bg)+'">'+esc(icon)+'</div><div class="grp-tx"><b>'+esc(title.split(' · ')[0])+'</b><span>'+esc(sub)+'</span></div>';
     c.appendChild(head);
     return c;
   }
   function row(c,label,val,oninput){
     var r=document.createElement('div');r.className='rn-row';
-    r.innerHTML='<span class="rn-lb">'+label+'</span>';
+    r.innerHTML='<span class="rn-lb">'+esc(label)+'</span>';
     var i=document.createElement('input');i.value=val;i.spellcheck=false;
     i.addEventListener('input',function(){oninput(this.value);});
     r.appendChild(i);c.appendChild(r);

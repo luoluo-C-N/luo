@@ -1,6 +1,13 @@
 /** views/editor —— 文章编辑器（S6）。验收: SITE-FR5；401 保留草稿 */
 /* 逐字迁移自 src/prototype.js（步骤 S6）；行为变更需走评审。 */
 
+/** HTML 转义（防御 XSS） */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function openPostEditor(id){
   jfetch(API_BASE+'/api/posts/detail/'+id).then(function(p){
     POST_EDIT=p;

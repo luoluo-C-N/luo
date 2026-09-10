@@ -1,6 +1,13 @@
 /** lab/editor —— 模块编辑器：三标签 CodeMirror/预览/保存 */
 /* 逐字迁移自 src/prototype.js（步骤 S-LAB）；行为变更需走评审。 */
 
+/** HTML 转义（防御 XSS）：任何拼进 innerHTML 的动态数据必须先过这里 */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function startEditor(mode){
   edDraft={id:'m'+Date.now(),mode:mode,type:mode==='tpl'?'stat':'code',name:'',icon:mode==='tpl'?'🔢':'⌨️',size:'half',w:'h',hc:'s',dynsrc:'latestComments',sec:'',enabled:true,panel:presetPanel||'site',
     data:{source:'cpu',manual:50},unit:'',rows:'示例项目|值',refresh:0,
@@ -123,7 +130,7 @@ export function renderEditor(){
 export function renderEdPreview(){
   var g=document.getElementById('edPrev');if(!g)return;g.innerHTML='';
   try{renderTplModule(edDraft,g);}catch(err){
-    g.innerHTML='<div class="mod-err">⚠️ '+err.message+'</div>';
+    g.innerHTML='<div class="mod-err">⚠️ '+esc(err.message)+'</div>';
   }
 }
 

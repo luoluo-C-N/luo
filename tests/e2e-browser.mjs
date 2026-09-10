@@ -161,6 +161,41 @@ async function run() {
     });
   }
 
+  // ===== 8. 数据流测试（密码/钱包 加密往返）=====
+  console.log('\n--- 8. 数据流（vault 加密往返）---');
+  const dataflow = await page.evaluate(async () => {
+    const out = { vault: null, add: null, read: null, mismatch: null };
+    try {
+      const { createVault } = await import('/src/core/vault.js');
+      const store = new Map();
+      const driver = { get: async k => store.get(k) ?? null, set: async (k, v) => { store.set(k, String(v)); } };
+      const vault = createVault({ driver, iterations: 100 });
+      await vault.setMaster('test-pw-123');
+      out.vault = 'set';
+
+      // 模拟 password store 的 addEntry → loadEntries
+      const rec = await vault.encrypt([{ id: 'pw-1', title: 'GitHub', password: 'secret-abc' }]);
+      store.set('pw:vault', JSON.stringify(rec));
+      const raw = store.get('pw:vault');
+      out.add = raw.includes('secret-abc') ? 'LEAK' : 'encrypted-ok';
+
+      // 解密读回
+      const back = await vault.decrypt(JSON.parse(raw));
+      out.read = (back[0] && back[0].password === 'secret-abc') ? 'roundtrip-ok' : 'FAIL';
+
+      // 错误密码解锁应失败
+      vault.lock();
+      const ok = await vault.unlock('wrong-pw');
+      out.mismatch = (ok === false) ? 'rejected-ok' : 'FAIL';
+    } catch (e) { out.error = String(e && e.message); }
+    return out;
+  });
+  check('vault 主密码可设置', dataflow.vault === 'set');
+  check('密码落盘为密文（无明文泄露）', dataflow.add === 'encrypted-ok');
+  check('密码解密往返一致', dataflow.read === 'roundtrip-ok');
+  check('错误主密码被拒绝', dataflow.mismatch === 'rejected-ok');
+  if (dataflow.error) console.log('    错误:', dataflow.error);
+
   // ===== 7. JS 错误汇总 =====
   console.log('\n--- 7. JS 错误 ---');
   const realErrors = consoleErrors.filter((e) =>

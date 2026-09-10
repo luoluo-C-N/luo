@@ -23,6 +23,13 @@ import { attempt, guard } from './errors.js';
  *   defaultModule?: string
  * }} options
  */
+/** HTML 转义（防御 XSS）：任何拼进 innerHTML 的动态数据必须先过这里 */
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
 export function createRouter(options) {
   const doc = options.doc ?? globalThis.document;
   const { registry, makeContext, bus, log } = options;
@@ -87,7 +94,7 @@ export function createRouter(options) {
           btn.classList.add('is-broken');
           btn.title = item.error || '模块加载失败';
         }
-        btn.innerHTML = `<span class="nav-item__icon">${item.icon ?? '🧩'}</span><span class="nav-item__name">${item.name}</span>`;
+        btn.innerHTML = `<span class="nav-item__icon">${esc(item.icon ?? '🧩')}</span><span class="nav-item__name">${esc(item.name)}</span>`;
         btn.addEventListener('click', () => api.show(item.id));
         root.appendChild(btn);
       }
