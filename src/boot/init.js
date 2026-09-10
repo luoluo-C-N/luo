@@ -546,9 +546,10 @@ regPoll(function(){
 },20000);
 regPoll(probeSvc,30000);
 regPoll(notifCheck,30000);
-fetch(API_BASE+'/api/system/services/restart',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},authHeaders()),body:JSON.stringify({port:0})})
-  .then(function(r){SVC_CTRL=(r.status!==403);})
-  .catch(function(){SVC_CTRL=false;});
+/* 服务控制能力探测已移除（原实现有严重缺陷）：
+   原代码每次启动都 POST /api/system/services/restart 做能力探测——用「有副作用的重启接口」
+   当探针，且靠 403 vs 400 的错误码差异判断，语义错误且极脆弱（后端若允许 port=0 则每次
+   开 App 会真的重启服务）。现改为：SVC_CTRL 保持 null=未知，用户点击「重启」时按响应懒判断。*/
 
 /* ---------- 分区条拖拽滚动(鼠标可拖,触屏原生滚动) ---------- */
 (function(){

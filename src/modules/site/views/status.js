@@ -105,7 +105,7 @@ export function svcMgrRender(){
         '<button style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--glass);color:var(--ink-2);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="copySvcAddr(\''+meta.url+'\')">复制地址</button>'+
         (p.port===8000?'<button style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--glass);color:var(--purple);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="window.open(\'backBase()/docs\')">API 文档</button>':'')+
         '</div>'+
-        (SVC_CTRL&&on&&(p.port===3000||p.port===8787)?'<div style="display:flex;gap:8px;margin-top:8px"><button style="flex:1;padding:8px;border:none;border-radius:10px;background:rgba(255,69,58,.10);color:var(--red);font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="restartSvc('+p.port+')">⚠ 重启该服务</button><div style="flex:1.4;font-size:11px;color:var(--ink-3);align-self:center">终止进程并拉起 · 需数秒恢复</div></div>':'')+
+        (SVC_CTRL!==false&&on&&(p.port===3000||p.port===8787)?'<div style="display:flex;gap:8px;margin-top:8px"><button style="flex:1;padding:8px;border:none;border-radius:10px;background:rgba(255,69,58,.10);color:var(--red);font-weight:800;font-size:12.5px;cursor:pointer;font-family:inherit" onclick="restartSvc('+p.port+')">⚠ 重启该服务</button><div style="flex:1.4;font-size:11px;color:var(--ink-3);align-self:center">终止进程并拉起 · 需数秒恢复</div></div>':'')+
         '</div>';
     }).join('')+
     '<div class="card" style="padding:10px 14px"><div style="font-size:11.5px;color:var(--ink-3);line-height:1.7">进程信息来自后端 psutil（需管理员登录）。重启功能需后端 .env 设置 ENABLE_SERVICE_CONTROL=true（当前'+(SVC_CTRL?'<b style="color:var(--green)">已启用</b>':'未启用')+'；后端自身 8000 出于自杀保护不支持 App 重启）。</div></div>'+
@@ -126,7 +126,15 @@ export function restartSvc(port){
     toast('重启指令已发送…');
     jfetch(API_BASE+'/api/system/services/restart',{method:'POST',body:JSON.stringify({port:port})})
       .then(function(r){toast(unwrap(r).message||'已执行');})
-      .catch(function(e){toastErr(e);});
+      .catch(function(e){
+        /* 403=后端未启用服务控制：标记 SVC_CTRL 并刷新，隐藏重启按钮，避免重复尝试 */
+        if(e&&e.status===403){
+          SVC_CTRL=false;
+          var pg=document.getElementById('pg-svcmgr');
+          if(pg&&pg.classList.contains('show')&&typeof svcMgrRender==='function')svcMgrRender();
+        }
+        toastErr(e);
+      });
     var tries=0;
     var poll=function(){
       tries++;
